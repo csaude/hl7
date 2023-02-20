@@ -1,0 +1,51 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{ base :: common_header(~{::title},~{}) }">
+    <title th:text="#{hl7.generate.file}"></title>
+</head>
+
+<body>
+    <form action="#" th:action="@{/hl7}" th:object="${hl7FileForm}" method="post">
+
+        <label for="province" th:text="#{hl7.province}"></label>
+        <select th:field="*{province}">
+            <option th:value="*{province.id}" th:text="*{province.name}"></option>
+        </select>
+
+        <label for="district" th:text="#{hl7.district}"></label>
+        <select th:field="*{district}">
+            <option th:each="d : *{province.childLocations}"
+                    th:value="${d.id}"
+                    th:text="${d.name}"></option>
+        </select>
+
+
+
+        <label for="healthFacilities" th:text="#{hl7.healthFacilities}"></label>
+        <select th:field="*{healthFacilities}"
+                th:multiple="true"
+                th:errorclass="error">
+            <option th:each="hf : *{district.childLocations}"
+                th:value="${hf.id}"
+                th:text="${hf.name}"></option>
+        </select>
+        <span th:if="${#fields.hasErrors('healthFacilities')}" th:errors="*{healthFacilities}"></span>
+
+        <button type="sumit" th:text="#{hl7.submit}"></button>
+
+    </form>
+
+    <script th:inline="javascript">
+        const districtSelect = document.getElementById("district");
+
+        function changeDistrict() {
+            const selected = districtSelect.selectedOptions[0];
+            location.search = `district=${selected.value}`;
+        }
+
+        district.addEventListener("change", changeDistrict, false);
+    </script>
+</body>
+
+</html>

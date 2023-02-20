@@ -1,0 +1,13 @@
+<!DOCTYPE HTML>
+<html>
+<head th:fragment="common_header(title,links)">
+    <title th:replace="${title}">HL7 Tool</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <!--/* Per-page placeholder for additional links */-->
+    <th:block th:replace="${links}" />
+</head>
+<body>
+    <p><a href="/hl7">HL7 Tool</a></p>
+</body>
+</html>
