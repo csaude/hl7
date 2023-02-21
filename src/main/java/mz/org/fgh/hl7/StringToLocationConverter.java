@@ -14,7 +14,7 @@ public class StringToLocationConverter implements Converter<String, Location> {
         this.locationService = locationService;
     }
 
-    public Location convert(String id) {
-        return locationService.findById(Long.valueOf(id));
+    public Location convert(String uuid) {
+        return locationService.findByUuid(uuid);
     }
 }

@@ -10,13 +10,15 @@
 
         <label for="province" th:text="#{hl7.province}"></label>
         <select th:field="*{province}">
-            <option th:value="*{province.id}" th:text="*{province.name}"></option>
+            <option th:each="p : ${allProvinces}"
+                    th:value="${p.uuid}"
+                    th:text="${p.name}"></option>
         </select>
 
         <label for="district" th:text="#{hl7.district}"></label>
         <select th:field="*{district}">
             <option th:each="d : *{province.childLocations}"
-                    th:value="${d.id}"
+                    th:value="${d.uuid}"
                     th:text="${d.name}"></option>
         </select>
 
@@ -27,7 +29,7 @@
                 th:multiple="true"
                 th:errorclass="error">
             <option th:each="hf : *{district.childLocations}"
-                th:value="${hf.id}"
+                th:value="${hf.uuid}"
                 th:text="${hf.name}"></option>
         </select>
         <span th:if="${#fields.hasErrors('healthFacilities')}" th:errors="*{healthFacilities}"></span>
@@ -37,14 +39,21 @@
     </form>
 
     <script th:inline="javascript">
+        const provinceSelect = document.getElementById("province");
         const districtSelect = document.getElementById("district");
+
+        function changeProvince() {
+            const selected = provinceSelect.selectedOptions[0];
+            location.search = `province=${selected.value}`;
+        }
 
         function changeDistrict() {
             const selected = districtSelect.selectedOptions[0];
             location.search = `district=${selected.value}`;
         }
 
-        district.addEventListener("change", changeDistrict, false);
+        provinceSelect.addEventListener("change", changeProvince, false);
+        districtSelect.addEventListener("change", changeDistrict, false);
     </script>
 </body>
 
