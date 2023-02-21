@@ -9,6 +9,6 @@ import lombok.Data;
 public class Hl7FileForm {
     private Location province;
     private Location district;
-    @Size(min = 1)
+    @Size(min = 1, message="{hl7.validation.fileform.healthFacilities.Size.message}")
     private List<Location> healthFacilities;
 }
