@@ -24,14 +24,14 @@
 
 
 
-        <label for="healthFacilities" th:text="#{hl7.healthFacilities}"></label>
-        <select th:field="*{healthFacilities}"
-                th:multiple="true"
-                th:errorclass="error">
-            <option th:each="hf : *{district.childLocations}"
-                th:value="${hf.uuid}"
-                th:text="${hf.name}"></option>
-        </select>
+        <label th:text="#{hl7.healthFacilities}"></label>
+        <ul>
+            <li th:each="hf : *{district.childLocations}">
+              <input type="checkbox" th:field="*{healthFacilities}" th:value="${hf.uuid}" />
+              <label th:for="${#ids.prev('healthFacilities')}"
+                     th:text="${hf.name}"></label>
+            </li>
+        </ul>
         <span th:if="${#fields.hasErrors('healthFacilities')}" th:errors="*{healthFacilities}"></span>
 
         <button type="sumit" th:text="#{hl7.submit}"></button>
