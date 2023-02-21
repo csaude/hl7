@@ -6,6 +6,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -29,7 +30,8 @@ public class HL7Controller {
             Hl7FileForm hl7FileForm,
             Model model) {
 
-        List<Location> allProvinces = locationService.findAllProvinces();
+        @SuppressWarnings("unchecked")
+        List<Location> allProvinces = (List<Location>) model.getAttribute("allProvinces");
         Location province = hl7FileForm.getProvince();
         if (province == null) {
             province = allProvinces.get(0);
@@ -40,8 +42,6 @@ public class HL7Controller {
             hl7FileForm.setDistrict(province.getChildLocations().get(0));
         }
 
-        model.addAttribute("allProvinces", allProvinces);
-
         return "hl7";
     }
 
@@ -51,5 +51,10 @@ public class HL7Controller {
             return "hl7";
         }
         return "redirect:/";
+    }
+
+    @ModelAttribute("allProvinces")
+    public List<Location> setAllProvinces() {
+        return locationService.findAllProvinces();
     }
 }
