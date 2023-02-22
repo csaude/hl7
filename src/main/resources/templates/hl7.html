@@ -43,13 +43,14 @@
         const districtSelect = document.getElementById("district");
 
         function changeProvince() {
-            const selected = provinceSelect.selectedOptions[0];
-            location.search = `province=${selected.value}`;
+            const provinceOption = provinceSelect.selectedOptions[0];
+            location.search = `province=${provinceOption.value}`;
         }
 
         function changeDistrict() {
-            const selected = districtSelect.selectedOptions[0];
-            location.search = `district=${selected.value}`;
+            const provinceOption = provinceSelect.selectedOptions[0];
+            const districtOption = districtSelect.selectedOptions[0];
+            location.search = `province=${provinceOption.value}&district=${districtOption.value}`;
         }
 
         provinceSelect.addEventListener("change", changeProvince, false);
