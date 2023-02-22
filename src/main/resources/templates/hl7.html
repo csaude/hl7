@@ -1,40 +1,77 @@
 <!DOCTYPE HTML>
-<html xmlns:th="http://www.thymeleaf.org">
+<html>
 
-<head th:replace="~{ base :: common_header(~{::title},~{}) }">
+<head th:replace="~{ base :: common_header(~{:: title},~{}) }">
     <title th:text="#{hl7.generate.file}"></title>
 </head>
 
-<body>
+<body th:replace="~{ base :: common_body(~{:: form}, ~{:: script})}">
+
     <form action="#" th:action="@{/hl7}" th:object="${hl7FileForm}" method="post">
 
-        <label for="province" th:text="#{hl7.province}"></label>
-        <select th:field="*{province}">
-            <option th:each="p : ${allProvinces}"
-                    th:value="${p.uuid}"
-                    th:text="${p.name}"></option>
-        </select>
+        <div class="row">
+            <div class="col mb-3">
+                <label for="province" th:text="#{hl7.province}" class="form-label"></label>
+                <select th:field="*{province}" class="form-select">
+                    <option th:each="p : ${allProvinces}"
+                            th:value="${p.uuid}"
+                            th:text="${p.name}"></option>
+                </select>
+            </div>
+            <div class="col mb-3">
+                <label for="district" th:text="#{hl7.district}" class="form-label"></label>
+                <select th:field="*{district}" class="form-select">
+                    <option th:each="d : *{province.childLocations}"
+                            th:value="${d.uuid}"
+                            th:text="${d.name}"></option>
+                </select>
+            </div>
+        </div>
 
-        <label for="district" th:text="#{hl7.district}"></label>
-        <select th:field="*{district}">
-            <option th:each="d : *{province.childLocations}"
-                    th:value="${d.uuid}"
-                    th:text="${d.name}"></option>
-        </select>
+        <label th:text="#{hl7.healthFacilities}"
+               th:class="${#fields.hasErrors('healthFacilities') ? 'form-label is-invalid': 'form-label'}"></label>
 
+        <br/>
 
+        <div class="row">
 
-        <label th:text="#{hl7.healthFacilities}"></label>
-        <ul>
-            <li th:each="hf : *{district.childLocations}">
-              <input type="checkbox" th:field="*{healthFacilities}" th:value="${hf.uuid}" />
-              <label th:for="${#ids.prev('healthFacilities')}"
-                     th:text="${hf.name}"></label>
-            </li>
-        </ul>
-        <span th:if="${#fields.hasErrors('healthFacilities')}" th:errors="*{healthFacilities}"></span>
+            <div th:each="partition : ${partitionedHF}" class="col">
 
-        <button type="sumit" th:text="#{hl7.submit}"></button>
+                <div th:each="hf : ${partition}"
+                     th:class="${#fields.hasErrors('healthFacilities') ? 'form-check is-invalid': 'form-check'}">
+
+                    <input type="checkbox"
+                        th:field="*{healthFacilities}"
+                        th:value="${hf.uuid}"
+                        th:class="${#fields.hasErrors('healthFacilities') ? 'form-check-input is-invalid': 'form-check-input'}"
+                        aria-describedby="healthFacilitiesInvalidFeedback"
+                        th:required />
+                    <label th:for="${#ids.prev('healthFacilities')}"
+                            th:text="${hf.name}"
+                            class="form-check-label"></label>
+
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${#fields.hasErrors('healthFacilities')}"
+             th:id="healthFacilitiesInvalidFeedback"
+             th:errors="*{healthFacilities}"
+             class="invalid-feedback"></div>
+
+        <div th:if="${#lists.isEmpty(#object.district.childLocations)}">
+            <span
+                  class="form-text"
+                  th:text="#{hl7.healthFacilities.empty}"></span>
+            <br/>
+        </div>
+
+        <br/>
+
+        <button th:type="submit"
+                th:disabled="${#lists.isEmpty(#object.district.childLocations)}"
+                th:text="#{hl7.submit}"
+                class="btn btn-primary"></button>
 
     </form>
 

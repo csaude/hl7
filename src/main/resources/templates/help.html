@@ -1,0 +1,19 @@
+<!DOCTYPE HTML>
+<html>
+
+<head th:replace="~{base :: common_header(~{:: title},~{}) }">
+  <title th:text="#{hl7.help.title}"></title>
+</head>
+
+<body th:replace="~{base :: common_body(~{:: .jumbotron},~{}) }">
+  <div class="jumbotron p-5 mb-4 bg-light rounded-3">
+    <div class="container-fluid py-5">
+      <h1 class="display-5 fw-bold" th:text="#{hl7.tool.name}"></h1>
+      <small th:text="${appVersion}"></small>
+      <p class="col-md-8 fs-4" th:text="#{hl7.tool.help}"></p>
+      <p th:utext="#{hl7.tool.helpdesk}"></p>
+    </div>
+  </div>
+</body>
+
+</html>
