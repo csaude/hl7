@@ -36,6 +36,7 @@
       </nav>
 
     <div class="container">
+        <div class="alerts" th:if="${alert}" th:insert="~{alerts :: show(${alert})}"></div>
         <th:block th:replace="${content}" />
     </div>
 
