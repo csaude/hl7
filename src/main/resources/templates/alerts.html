@@ -4,7 +4,10 @@
 
   <body>
 
-    <div th:fragment="show(alert)" th:class="'alert ' + ${alert.type.cssClass}" th:text="#{${alert.message}}"></div>
+    <div th:fragment="show(alert)" th:class="'alert alert-dismissible fade show ' + ${alert.type.cssClass}">
+      <span th:text="#{${alert.message}}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 
   </body>
 

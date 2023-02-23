@@ -15,6 +15,10 @@ public class StringToLocationConverter implements Converter<String, Location> {
     }
 
     public Location convert(String uuid) {
-        return locationService.findByUuid(uuid);
+        try {
+            return locationService.findByUuid(uuid);
+        } catch (AppException e) {
+            return null;
+        }
     }
 }

@@ -2,14 +2,19 @@ package mz.org.fgh.hl7.service;
 
 import static org.springframework.web.reactive.function.client.ExchangeFilterFunctions.basicAuthentication;
 
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientException;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import mz.org.fgh.hl7.AppException;
 import mz.org.fgh.hl7.Location;
 import mz.org.fgh.hl7.LocationSearch;
 
@@ -39,19 +44,57 @@ public class LocationServiceImpl implements LocationService {
     }
 
     public List<Location> findAllProvinces() {
-        return webClient.get()
-                .uri("/location?tag={tag}&v={representation}", PROVINCE_TAG, REPRESENTATION)
-                .retrieve()
-                .bodyToMono(LocationSearch.class)
-                .map(LocationSearch::getResults)
-                .block();
+        try {
+
+            return webClient.get()
+                    .uri("/location?tag={tag}&v={representation}", PROVINCE_TAG, REPRESENTATION)
+                    .retrieve()
+                    .bodyToMono(LocationSearch.class)
+                    .map(LocationSearch::getResults)
+                    .block();
+
+        } catch (WebClientException e) {
+
+            Throwable cause = e.getMostSpecificCause();
+
+            if (cause instanceof SocketTimeoutException) {
+                throw new AppException("hl7.fetch.location.error.timeout", cause);
+            }
+            if (cause instanceof ConnectException) {
+                throw new AppException("hl7.fetch.location.error.connect", cause);
+            }
+            if (cause instanceof IOException) {
+                throw new AppException("hl7.fetch.location.error", cause);
+            }
+
+            throw e;
+        }
     }
 
     public Location findByUuid(String uuid) {
-        return webClient.get()
-                .uri("/location/{uuid}?v={reprensentation}", uuid, REPRESENTATION)
-                .retrieve()
-                .bodyToMono(Location.class)
-                .block();
+        try {
+
+            return webClient.get()
+                    .uri("/location/{uuid}?v={reprensentation}", uuid, REPRESENTATION)
+                    .retrieve()
+                    .bodyToMono(Location.class)
+                    .block();
+
+        } catch (WebClientException e) {
+
+            Throwable cause = e.getMostSpecificCause();
+
+            if (cause instanceof SocketTimeoutException) {
+                throw new AppException("hl7.fetch.location.error.timeout", cause);
+            }
+            if (cause instanceof ConnectException) {
+                throw new AppException("hl7.fetch.location.error.connect", cause);
+            }
+            if (cause instanceof IOException) {
+                throw new AppException("hl7.fetch.location.error", cause);
+            }
+
+            throw e;
+        }
     }
 }
