@@ -63,22 +63,26 @@
   </form>
 
   <script th:inline="javascript">
+    'use strict';
+
+    document.addEventListener("DOMContentLoaded", function() {
       const provinceSelect = document.getElementById("province");
       const districtSelect = document.getElementById("district");
 
       function changeProvince() {
-          const provinceOption = provinceSelect.selectedOptions[0];
-          location.search = `province=${provinceOption.value}`;
+        const provinceOption = provinceSelect.selectedOptions[0];
+        location.search = `province=${provinceOption.value}`;
       }
 
       function changeDistrict() {
-          const provinceOption = provinceSelect.selectedOptions[0];
-          const districtOption = districtSelect.selectedOptions[0];
-          location.search = `province=${provinceOption.value}&district=${districtOption.value}`;
+        const provinceOption = provinceSelect.selectedOptions[0];
+        const districtOption = districtSelect.selectedOptions[0];
+        location.search = `province=${provinceOption.value}&district=${districtOption.value}`;
       }
 
       provinceSelect.addEventListener("change", changeProvince, false);
       districtSelect.addEventListener("change", changeDistrict, false);
+    });
   </script>
 </body>
 
