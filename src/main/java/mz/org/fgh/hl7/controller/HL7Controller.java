@@ -76,29 +76,13 @@ public class HL7Controller {
     public String newHL7Form(
             Hl7FileForm hl7FileForm,
             Model model,
-            HttpSession session,
             RedirectAttributes redirectAttrs) {
 
         try {
-
             setAllProvinces(hl7FileForm, model);
-
-            // Store form state so we can rebuild it if anything happens
-            session.setAttribute("previousForm", hl7FileForm);
-
         } catch (AppException e) {
-            // Try to rebuild form state
-            Hl7FileForm previousForm = (Hl7FileForm) session.getAttribute("previousForm");
-            if (previousForm != null) {
-                model.addAttribute(Alert.danger(e.getMessage()));
-                model.addAttribute("hl7FileForm", previousForm);
-                model.addAttribute("allProvinces", Arrays.asList(previousForm.getProvince()));
-                model.addAttribute("partitionedHF",
-                        ListUtils.partition(previousForm.getDistrict().getChildLocations(), ROW_SIZE));
-            } else {
-                redirectAttrs.addFlashAttribute(Alert.danger(e.getMessage()));
-                return "redirect:/hl7";
-            }
+            redirectAttrs.addFlashAttribute(Alert.danger(e.getMessage()));
+            return "redirect:/hl7";
         }
         return "newHL7";
     }
@@ -112,7 +96,7 @@ public class HL7Controller {
             RedirectAttributes redirectAttrs) {
 
         if (result.hasErrors()) {
-            return newHL7Form(hl7FileForm, model, session, redirectAttrs);
+            return newHL7Form(hl7FileForm, model, redirectAttrs);
         }
 
         hl7FileService.create(hl7FileForm.getFilename());

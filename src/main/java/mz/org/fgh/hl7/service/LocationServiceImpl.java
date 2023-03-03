@@ -8,6 +8,7 @@ import java.net.SocketTimeoutException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientException;
@@ -43,6 +44,7 @@ public class LocationServiceImpl implements LocationService {
                 .build();
     }
 
+    @Cacheable("allProvinces")
     public List<Location> findAllProvinces() {
         try {
 
@@ -71,6 +73,7 @@ public class LocationServiceImpl implements LocationService {
         }
     }
 
+    @Cacheable("provinceByUuid")
     public Location findByUuid(String uuid) {
         try {
 
