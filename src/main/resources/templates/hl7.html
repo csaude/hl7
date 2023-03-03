@@ -82,13 +82,13 @@
 
         </div>
 
-        <!--/* Processing or last modified time */-->
+        <!--/* Processing or last modified time (Status) */-->
 
         <small th:if="${hl7.processingStatus.name() == 'PROCESSING'}"  class="opacity-50 text-nowrap">
           <span class="spinner-grow spinner-grow-sm" role="status"></span> <span th:text="#{hl7.files.processing}">A Processar...</span>
         </small>
         <smal th:if="${hl7.processingStatus.name() == 'DONE'}" class="opacity-50 text-nowrap">
-          <span th:text="${#temporals.format(hl7.lastModifiedTime)}"></span>
+          <i class='bi bi-check'></i> <span th:text="${#temporals.format(hl7.lastModifiedTime)}"></span>
         </small>
 
       </div>
@@ -110,6 +110,12 @@
       modalTitle.textContent = `[(#{hl7.modal.delete.javascript})]`;
       form.action = `[(@{/hl7/${filename}})]`;
     });
+
+    // Not ideal, but for now reload the page every 5s to get the
+    // latest hl7 status.
+    setTimeout(function(){
+      location.reload();
+    }, 5000);
   </script>
 
 </body>

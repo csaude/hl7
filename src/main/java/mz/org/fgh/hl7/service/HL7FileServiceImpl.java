@@ -35,6 +35,7 @@ public class HL7FileServiceImpl implements HL7FileService {
                 return paths
                         .filter(p -> p.toString().endsWith(HL7_EXTENSION))
                         .map(this::createHL7File)
+                        .sorted((a , b) -> b.getLastModifiedTime().compareTo(a.getLastModifiedTime()))
                         .toList();
             }
         } catch (IOException e) {
