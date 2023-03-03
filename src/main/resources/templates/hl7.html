@@ -84,7 +84,7 @@
 
         <!--/* Processing or last modified time (Status) */-->
 
-        <small th:if="${hl7.processingStatus.name() == 'PROCESSING'}"  class="opacity-50 text-nowrap">
+        <small th:if="${hl7.processingStatus.name() == 'PROCESSING'}"  class="opacity-50 text-nowrap" data-processing>
           <span class="spinner-grow spinner-grow-sm" role="status"></span> <span th:text="#{hl7.files.processing}">A Processar...</span>
         </small>
         <smal th:if="${hl7.processingStatus.name() == 'DONE'}" class="opacity-50 text-nowrap">
@@ -113,9 +113,13 @@
 
     // Not ideal, but for now reload the page every 5s to get the
     // latest hl7 status.
-    setTimeout(function(){
-      location.reload();
-    }, 5000);
+    const processingFiles = document.querySelectorAll("[data-processing]");
+    if (processingFiles.length) {
+      setTimeout(function(){
+        location.reload();
+      }, 5000);
+    }
+
   </script>
 
 </body>
