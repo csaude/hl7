@@ -84,10 +84,10 @@
 
         <!--/* Processing or last modified time (Status) */-->
 
-        <small th:if="${hl7.processingStatus.name() == 'PROCESSING'}"  class="opacity-50 text-nowrap" data-processing>
+        <small th:if="${hl7.processingStatus.name() == 'PROCESSING'}"  class="opacity-75 text-nowrap text-warning" data-processing>
           <span class="spinner-grow spinner-grow-sm" role="status"></span> <span th:text="#{hl7.files.processing}">A Processar...</span>
         </small>
-        <smal th:if="${hl7.processingStatus.name() == 'DONE'}" class="opacity-50 text-nowrap">
+        <smal th:if="${hl7.processingStatus.name() == 'DONE'}" class="opacity-75 text-nowrap text-success">
           <i class='bi bi-check'></i> <span th:text="${#temporals.format(hl7.lastModifiedTime)}"></span>
         </small>
 
