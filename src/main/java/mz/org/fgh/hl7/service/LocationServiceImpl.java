@@ -48,12 +48,18 @@ public class LocationServiceImpl implements LocationService {
     public List<Location> findAllProvinces() {
         try {
 
-            return webClient.get()
+            List<Location> locationList = webClient.get()
                     .uri("/location?tag={tag}&v={representation}", PROVINCE_TAG, REPRESENTATION)
                     .retrieve()
                     .bodyToMono(LocationSearch.class)
                     .map(LocationSearch::getResults)
                     .block();
+
+            if (locationList.isEmpty()) {
+                throw new AppException("hl7.fetch.province.error.empty");
+            }
+
+            return locationList;
 
         } catch (WebClientException e) {
 
