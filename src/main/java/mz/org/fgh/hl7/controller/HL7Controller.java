@@ -67,8 +67,9 @@ public class HL7Controller {
             redirectAttrs.addFlashAttribute(Alert.success("hl7.files.deleted"));
         } catch (AppException e) {
             redirectAttrs.addFlashAttribute(Alert.danger(e.getLocalizedMessage()));
+        } finally {
+            return "redirect:/hl7";
         }
-        return "redirect:/hl7";
     }
 
     @GetMapping("/new")
