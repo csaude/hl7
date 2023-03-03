@@ -1,4 +1,4 @@
-package mz.org.fgh.hl7.dao.impl;
+package mz.org.fgh.hl7.dao;
 
 import java.util.List;
 
@@ -7,7 +7,6 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import mz.org.fgh.hl7.dao.Hl7FileGeneratorDao;
 import mz.org.fgh.hl7.model.PatientDemographic;
 import mz.org.fgh.hl7.util.Util;
 
@@ -19,7 +18,6 @@ public class Hl7FileGeneratorDaoImpl implements Hl7FileGeneratorDao {
 	
 	private String sql;
 	
-	@Override
 	public List<PatientDemographic> getPatientDemographicData(List<String> locationsByUuid) {
 		
 		sql = "select REPLACE(REPLACE(pid.identifier, '\r', ''), '\n', ' ') pid,"
