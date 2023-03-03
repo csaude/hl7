@@ -1,9 +1,10 @@
 package mz.org.fgh.hl7.controller;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.collections4.ListUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,8 @@ import mz.org.fgh.hl7.service.LocationService;
 @Controller
 @RequestMapping("/hl7")
 public class HL7Controller {
+
+    private static final Logger LOG = LoggerFactory.getLogger(HL7Controller.class);
 
     private static final int ROW_SIZE = 5;
 
@@ -66,6 +69,7 @@ public class HL7Controller {
             hl7FileService.delete(filename);
             redirectAttrs.addFlashAttribute(Alert.success("hl7.files.deleted"));
         } catch (AppException e) {
+            LOG.error(e.getMessage(), e);
             redirectAttrs.addFlashAttribute(Alert.danger(e.getLocalizedMessage()));
         } finally {
             return "redirect:/hl7";
@@ -81,6 +85,7 @@ public class HL7Controller {
         try {
             setAllProvinces(hl7FileForm, model);
         } catch (AppException e) {
+            LOG.error(e.getMessage(), e);
             redirectAttrs.addFlashAttribute(Alert.danger(e.getMessage()));
             return "redirect:/hl7";
         }

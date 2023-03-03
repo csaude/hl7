@@ -1,5 +1,7 @@
 package mz.org.fgh.hl7.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -11,6 +13,8 @@ import jakarta.servlet.http.HttpServletRequest;
 @Controller
 public class AppErrorController implements ErrorController {
 
+    private static final Logger LOG = LoggerFactory.getLogger(AppErrorController.class);
+
     @RequestMapping("/error")
     public String handleError(HttpServletRequest request) {
         Object status = request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
@@ -19,8 +23,10 @@ public class AppErrorController implements ErrorController {
             Integer statusCode = Integer.valueOf(status.toString());
 
             if (statusCode == HttpStatus.NOT_FOUND.value()) {
+                LOG.info("404 Could not find page {}", request.getRequestURI());
                 return "error/404";
             } else if (statusCode == HttpStatus.INTERNAL_SERVER_ERROR.value()) {
+                LOG.error("500 Unexpected Error {}", request.getRequestURI());
                 return "error/500";
             }
         }
