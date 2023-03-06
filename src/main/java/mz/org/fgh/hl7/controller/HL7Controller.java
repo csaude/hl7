@@ -92,7 +92,7 @@ public class HL7Controller {
         return "newHL7";
     }
 
-    @PostMapping
+    @PostMapping("/new")
     public String createHL7(
             @Valid Hl7FileForm hl7FileForm,
             BindingResult result,
@@ -101,6 +101,18 @@ public class HL7Controller {
             RedirectAttributes redirectAttrs) {
 
         if (result.hasErrors()) {
+            return newHL7Form(hl7FileForm, model, redirectAttrs);
+        }
+
+        try {
+            hl7FileService.validateCreate(hl7FileForm.getFilename());
+        } catch (AppException e) {
+            LOG.error(e.getMessage(), e);
+            if (e.getMessage().equals("hl7.create.error.exists")) {
+                result.rejectValue("filename", e.getMessage());
+            } else {
+                model.addAttribute(Alert.danger(e.getMessage()));
+            }
             return newHL7Form(hl7FileForm, model, redirectAttrs);
         }
 
