@@ -12,7 +12,7 @@ import lombok.ToString;
 public class HL7File {
 
     public enum ProcessingStatus {
-        PROCESSING, DONE;
+        PROCESSING, FAILED, DONE;
     }
 
     @Getter
@@ -27,4 +27,16 @@ public class HL7File {
     @Getter
     @Setter
     private LocalDateTime lastModifiedTime;
+
+    public boolean isProcessing() {
+        return processingStatus == ProcessingStatus.PROCESSING;
+    }
+
+    public boolean isFailed() {
+        return processingStatus == ProcessingStatus.FAILED;
+    }
+
+    public boolean isDone() {
+        return processingStatus == ProcessingStatus.DONE;
+    }
 }
