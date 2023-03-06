@@ -45,6 +45,10 @@ public class Hl7ServiceImpl implements Hl7Service {
 		pipeParser.getParserConfiguration();
 
 		// serialize the message to pipe delimited output file
-		Util.writeMessageToFile(pipeParser, adtMessages, fileName + "_Patient_Demographic_Data.hl7", headers, hl7LocationFolder); 
+		Util.writeMessageToFile(pipeParser, 
+				adtMessages, 
+				new StringBuilder().append(fileName).append("_Patient_Demographic_Data.hl7").toString(), 
+				headers, 
+				hl7LocationFolder); 
 	}
 }

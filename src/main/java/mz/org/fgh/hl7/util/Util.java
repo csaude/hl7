@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -51,7 +52,7 @@ public class Util {
 
 			// Remember that the file may not show special delimiter characters when using
 			// plain text editor
-			File file = new File(hl7LocationFolder + outputFilename); 
+			File file = new File(Paths.get(hl7LocationFolder, outputFilename).toString());   
 
 			file.createNewFile();
 
