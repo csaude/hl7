@@ -13,7 +13,7 @@ import mz.org.fgh.hl7.util.Util;
 @Repository
 public class Hl7FileGeneratorDaoImpl implements Hl7FileGeneratorDao {
 	
-	@Autowired
+	@Autowired 
 	private JdbcTemplate jdbcTemplate;
 	
 	private String sql;
