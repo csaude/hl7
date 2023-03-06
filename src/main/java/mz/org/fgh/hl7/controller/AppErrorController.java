@@ -32,4 +32,5 @@ public class AppErrorController implements ErrorController {
 	public String getErrorPath() {
 		return "/error";
 	}
+
 }

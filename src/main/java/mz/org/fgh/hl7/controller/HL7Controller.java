@@ -90,6 +90,7 @@ public class HL7Controller {
 		
         hl7Service.createHl7File(Util.extractUuid(hl7FileForm.getHealthFacilities()), hl7FileForm.getFilename(), hl7LocationFolder);
 
+
         redirectAttrs.addFlashAttribute(Alert.success("hl7.schedule.success"));
         return "redirect:/";
     }
