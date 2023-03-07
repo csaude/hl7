@@ -1,4 +1,4 @@
-package mz.org.fgh.hl7.controller;
+package mz.org.fgh.hl7.web.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

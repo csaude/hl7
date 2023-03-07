@@ -1,4 +1,4 @@
-package mz.org.fgh.hl7;
+package mz.org.fgh.hl7.web;
 
 import lombok.Getter;
 import lombok.ToString;

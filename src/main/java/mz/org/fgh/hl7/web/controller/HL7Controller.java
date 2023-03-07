@@ -1,6 +1,10 @@
-package mz.org.fgh.hl7.controller;
+package mz.org.fgh.hl7.web.controller;
 
+import java.io.IOException;
 import java.util.List;
+
+import javax.servlet.http.HttpSession;
+import javax.validation.Valid;
 
 import org.apache.commons.collections4.ListUtils;
 import org.slf4j.Logger;
@@ -20,14 +24,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import jakarta.servlet.http.HttpSession;
-import jakarta.validation.Valid;
-import mz.org.fgh.hl7.Alert;
+import ca.uhn.hl7v2.HL7Exception;
 import mz.org.fgh.hl7.AppException;
-import mz.org.fgh.hl7.Hl7FileForm;
-import mz.org.fgh.hl7.Location;
-import mz.org.fgh.hl7.service.HL7FileService;
+import mz.org.fgh.hl7.model.Location;
+import mz.org.fgh.hl7.service.Hl7Service;
 import mz.org.fgh.hl7.service.LocationService;
+import mz.org.fgh.hl7.web.Alert;
+import mz.org.fgh.hl7.web.Hl7FileForm;
 
 @Controller
 @RequestMapping("/hl7")
@@ -39,22 +42,22 @@ public class HL7Controller {
 
     private LocationService locationService;
 
-    private HL7FileService hl7FileService;
+    private Hl7Service hl7Service;
 
-    public HL7Controller(LocationService locationService, HL7FileService hl7FileService) {
+    public HL7Controller(LocationService locationService, Hl7Service hl7Service) {
         this.locationService = locationService;
-        this.hl7FileService = hl7FileService;
+        this.hl7Service = hl7Service;
     }
 
     @GetMapping
     public String findAll(Model model) {
-        model.addAttribute("hl7FileList", hl7FileService.findAll());
+        model.addAttribute("hl7FileList", hl7Service.findAll());
         return "hl7";
     }
 
     @GetMapping("/{filename:^" + Hl7FileForm.FILENAME_CHARS + "*\\.hl7$}")
     public ResponseEntity<ByteArrayResource> download(@PathVariable String filename) {
-        ByteArrayResource resource = new ByteArrayResource(hl7FileService.read(filename));
+        ByteArrayResource resource = new ByteArrayResource(hl7Service.read(filename));
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
@@ -66,7 +69,7 @@ public class HL7Controller {
     @DeleteMapping("/{filename:^" + Hl7FileForm.FILENAME_CHARS + "*\\.hl7$}")
     public String delete(@PathVariable String filename, RedirectAttributes redirectAttrs) {
         try {
-            hl7FileService.delete(filename);
+            hl7Service.delete(filename);
             redirectAttrs.addFlashAttribute(Alert.success("hl7.files.deleted"));
         } catch (AppException e) {
             LOG.error(e.getMessage(), e);
@@ -98,14 +101,16 @@ public class HL7Controller {
             BindingResult result,
             Model model,
             HttpSession session,
-            RedirectAttributes redirectAttrs) {
+            RedirectAttributes redirectAttrs) throws HL7Exception, IOException {
 
         if (result.hasErrors()) {
             return newHL7Form(hl7FileForm, model, redirectAttrs);
         }
 
         try {
-            hl7FileService.validateCreate(hl7FileForm.getFilename());
+
+            hl7Service.validateCreate(hl7FileForm.getFilename());
+
         } catch (AppException e) {
             LOG.error(e.getMessage(), e);
             if (e.getMessage().equals("hl7.create.error.exists")) {
@@ -116,7 +121,7 @@ public class HL7Controller {
             return newHL7Form(hl7FileForm, model, redirectAttrs);
         }
 
-        hl7FileService.create(hl7FileForm.getFilename());
+        hl7Service.create(hl7FileForm.getFilename(), hl7FileForm.getHealthFacilities());
 
         redirectAttrs.addFlashAttribute(Alert.success("hl7.schedule.success"));
         return "redirect:/hl7";

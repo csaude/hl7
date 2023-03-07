@@ -2,7 +2,7 @@ package mz.org.fgh.hl7.service;
 
 import java.util.List;
 
-import mz.org.fgh.hl7.Location;
+import mz.org.fgh.hl7.model.Location;
 
 public interface LocationService {
 
