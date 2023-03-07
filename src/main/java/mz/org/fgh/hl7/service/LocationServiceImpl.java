@@ -16,8 +16,8 @@ import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import mz.org.fgh.hl7.AppException;
-import mz.org.fgh.hl7.Location;
-import mz.org.fgh.hl7.LocationSearch;
+import mz.org.fgh.hl7.model.Location;
+import mz.org.fgh.hl7.model.LocationSearch;
 
 @Service
 public class LocationServiceImpl implements LocationService {

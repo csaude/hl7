@@ -46,21 +46,21 @@
             <!--/* Download and Delete buttons */-->
 
             <div class="btn-group">
-              <a th:if="${hl7.isDone}"
+              <a th:if="${hl7.isDone()}"
                  th:href="@{'/hl7/' + ${hl7.fileName}}"
                  class="btn btn-light"
                  th:alt=#{hl7.files.download}
                  th:title=#{hl7.files.download}>
                 <i class="bi bi-download"></i>
               </a>
-              <a th:if="${hl7.isProcessing || hl7.isFailed}"
+              <a th:if="${hl7.isProcessing() || hl7.isFailed()}"
                  href="#"
                  class="btn btn-light disabled"
                  th:alt=#{hl7.files.download}
                  th:title=#{hl7.files.download}>
                 <i class="bi bi-download"></i>
               </a>
-              <a th:if="${hl7.isDone || hl7.isFailed}"
+              <a th:if="${hl7.isDone() || hl7.isFailed()}"
                  href="#"
                  class="btn btn-light"
                  th:alt="#{hl7.files.delete}"
@@ -70,7 +70,7 @@
                  th:data-bs-filename="${hl7.fileName}">
                 <i class="bi bi-trash3"></i>
               </a>
-              <a th:if="${hl7.isProcessing}"
+              <a th:if="${hl7.isProcessing()}"
                  href="#"
                  class="btn btn-light disabled"
                  th:alt="#{hl7.files.delete}"
@@ -84,13 +84,13 @@
 
         <!--/* Processing or last modified time (Status) */-->
 
-        <small th:if="${hl7.isProcessing}"  class="opacity-75 text-nowrap text-warning" data-processing>
+        <small th:if="${hl7.isProcessing()}"  class="opacity-75 text-nowrap text-warning" data-processing>
           <span class="spinner-grow spinner-grow-sm" role="status"></span> <span th:text="#{hl7.files.processing}">A Processar...</span>
         </small>
-        <small th:if="${hl7.isDone}" class="opacity-75 text-nowrap text-success">
+        <small th:if="${hl7.isDone()}" class="opacity-75 text-nowrap text-success">
           <i class='bi bi-check'></i> <span th:text="${#temporals.format(hl7.lastModifiedTime)}"></span>
         </small>
-        <small th:if="${hl7.isFailed}" class="opacity-75 text-nowrap text-danger">
+        <small th:if="${hl7.isFailed()}" class="opacity-75 text-nowrap text-danger">
           <i class="bi bi-exclamation-triangle"></i> <span th:text="#{hl7.files.processing.error}"></span>
         </small>
       </div>

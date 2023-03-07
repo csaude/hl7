@@ -9,7 +9,7 @@
 
   <div class="row justify-content-center content">
 
-    <div class="col-md-6">
+    <div class="col-lg-8">
 
       <form action="#" th:action="@{/hl7/new}" th:object="${hl7FileForm}" method="post">
 
@@ -71,6 +71,9 @@
         <br/>
 
         <div class="row">
+
+          <!--/* File name */-->
+
           <div class="col-sm-12 col-md-6 mb-3">
             <label for="filename" th:text="#{hl7.filename}" class="form-label"></label>
             <div class="input-group">
@@ -84,6 +87,9 @@
                    th:errors="*{filename}" class="invalid-feedback"></div>
             </div>
           </div>
+
+          <!--/* E-mail */-->
+
           <div class="col-sm-12 col-md-6 mb-3">
             <label for="email" th:text="#{hl7.email}" class="form-label"></label>
             <input type="text"
