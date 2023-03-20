@@ -8,15 +8,15 @@ import java.net.SocketTimeoutException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientException;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import mz.org.fgh.hl7.AppException;
-import mz.org.fgh.hl7.Location;
-import mz.org.fgh.hl7.LocationSearch;
+import mz.org.fgh.hl7.model.Location;
+import mz.org.fgh.hl7.model.LocationSearch;
 
 @Service
 public class LocationServiceImpl implements LocationService {
@@ -43,58 +43,43 @@ public class LocationServiceImpl implements LocationService {
                 .build();
     }
 
+    @Cacheable("allProvinces")
     public List<Location> findAllProvinces() {
-        try {
 
-            return webClient.get()
-                    .uri("/location?tag={tag}&v={representation}", PROVINCE_TAG, REPRESENTATION)
-                    .retrieve()
-                    .bodyToMono(LocationSearch.class)
-                    .map(LocationSearch::getResults)
-                    .block();
+        List<Location> locationList = webClient.get()
+                .uri("/location?tag={tag}&v={representation}", PROVINCE_TAG, REPRESENTATION)
+                .retrieve()
+                .bodyToMono(LocationSearch.class)
+                .map(LocationSearch::getResults)
+                .onErrorMap(SocketTimeoutException.class,
+                        e -> new AppException("hl7.fetch.location.error.timeout", e))
+                .onErrorMap(ConnectException.class,
+                        e -> new AppException("hl7.fetch.location.error.connect", e))
+                .onErrorMap(IOException.class,
+                        e -> new AppException("hl7.fetch.location.error", e))
+                .block();
 
-        } catch (WebClientException e) {
-
-            Throwable cause = e.getMostSpecificCause();
-
-            if (cause instanceof SocketTimeoutException) {
-                throw new AppException("hl7.fetch.location.error.timeout", cause);
-            }
-            if (cause instanceof ConnectException) {
-                throw new AppException("hl7.fetch.location.error.connect", cause);
-            }
-            if (cause instanceof IOException) {
-                throw new AppException("hl7.fetch.location.error", cause);
-            }
-
-            throw e;
+        if (locationList.isEmpty()) {
+            throw new AppException("hl7.fetch.province.error.empty");
         }
+
+        return locationList;
     }
 
+    @Cacheable("provinceByUuid")
     public Location findByUuid(String uuid) {
-        try {
 
-            return webClient.get()
-                    .uri("/location/{uuid}?v={reprensentation}", uuid, REPRESENTATION)
-                    .retrieve()
-                    .bodyToMono(Location.class)
-                    .block();
+        return webClient.get()
+                .uri("/location/{uuid}?v={reprensentation}", uuid, REPRESENTATION)
+                .retrieve()
+                .bodyToMono(Location.class)
+                .onErrorMap(SocketTimeoutException.class,
+                        e -> new AppException("hl7.fetch.location.error.timeout", e))
+                .onErrorMap(ConnectException.class,
+                        e -> new AppException("hl7.fetch.location.error.connect", e))
+                .onErrorMap(IOException.class,
+                        e -> new AppException("hl7.fetch.location.error", e))
+                .block();
 
-        } catch (WebClientException e) {
-
-            Throwable cause = e.getMostSpecificCause();
-
-            if (cause instanceof SocketTimeoutException) {
-                throw new AppException("hl7.fetch.location.error.timeout", cause);
-            }
-            if (cause instanceof ConnectException) {
-                throw new AppException("hl7.fetch.location.error.connect", cause);
-            }
-            if (cause instanceof IOException) {
-                throw new AppException("hl7.fetch.location.error", cause);
-            }
-
-            throw e;
-        }
     }
 }

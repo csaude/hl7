@@ -20,18 +20,18 @@ import mz.org.fgh.hl7.util.Util;
  * @author machabane
  */
 public class OurAdtA04MessageBuilder {
-	
-	static Logger log = Logger.getLogger(OurAdtA04MessageBuilder.class.getName());
-	
+
+	static final Logger LOG = Logger.getLogger(OurAdtA04MessageBuilder.class.getName());
+
 	private ADT_A24 _adtMessage;
-	
+
 	public List<ADT_A24> Build(List<PatientDemographic> demographics) throws HL7Exception, IOException {
-		
+
 		String currentDateTimeString = Util.getCurrentTimeStamp();
-		
+
 		List<ADT_A24> adt_A04s = new ArrayList<ADT_A24>();
-		
-		log.info("Iterating ADT A24 started...");
+
+		LOG.info("Iterating ADT A24 started...");
 		for (PatientDemographic demographic : demographics) {
 			_adtMessage = new ADT_A24();
 			_adtMessage.initQuickstart("ADT", "A24", "P");
@@ -41,11 +41,11 @@ public class OurAdtA04MessageBuilder {
 			adt_A04s.add(_adtMessage);
 		}
 		demographics = null;
-		log.info("Iterating ADT A24 ended...");
-		
+		LOG.info("Iterating ADT A24 ended...");
+
 		return adt_A04s;
 	}
-	
+
 	private void createMshSegment(String currentDateTimeString, PatientDemographic demographic) throws DataTypeException {
 		MSH mshSegment = _adtMessage.getMSH();
 		mshSegment.getFieldSeparator().setValue("|");
@@ -59,7 +59,7 @@ public class OurAdtA04MessageBuilder {
 		mshSegment.getMessageControlID().setValue(getSequenceNumber());
 		mshSegment.getVersionID().getVersionID().setValue("2.5.1");
 	}
-	
+
 	private void createPidSegment(PatientDemographic demographic) throws DataTypeException {
 		PID pid = _adtMessage.getPID();
 		XPN patientName = pid.getPatientName(0);
@@ -76,7 +76,7 @@ public class OurAdtA04MessageBuilder {
 		patientAddress.getStateOrProvince().setValue(demographic.getStateProvince());
 		patientAddress.getCountry().setValue(demographic.getCountry());
 	}
-	
+
 	private void createPv1Segment(PatientDemographic demographic) throws DataTypeException {
 		PV1 pv1 = _adtMessage.getPV1();
 		pv1.getSetIDPV1().setValue("1");
@@ -86,7 +86,7 @@ public class OurAdtA04MessageBuilder {
 		pv1.getAdmissionType().setValue("R");
 		pv1.getAdmitDateTime().getTime().setValue("");
 	}
-	
+
 	private String getSequenceNumber() {
 		String facilityNumberPrefix = "Location ID";
 		return facilityNumberPrefix.concat(Util.getCurrentTimeStamp());
