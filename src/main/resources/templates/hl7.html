@@ -1,127 +1,128 @@
 <!DOCTYPE HTML>
 <html>
-
-<head th:replace="~{ base :: common_header(~{:: title},~{}) }">
-  <title th:text="#{hl7.generate.file}"></title>
+<head th:replace="~{base :: common_header(~{:: title},~{}) }">
+    <title th:text="#{hl7.index.title}"></title>
 </head>
+<body th:replace="~{base :: common_body(~{:: .content}, ~{:: script})}">
 
-<body th:replace="~{ base :: common_body(~{:: .content}, ~{:: script})}">
-  <div class="row justify-content-center content">
-    <div class="col-6">
-      <form action="#" th:action="@{/hl7}" th:object="${hl7FileForm}" method="post">
+  <div class="content">
 
-        <div class="row">
-          <div class="col mb-3">
-            <label for="province" th:text="#{hl7.province}" class="form-label"></label>
-            <select th:field="*{province}" class="form-select">
-              <option th:each="p : ${allProvinces}" th:value="${p.uuid}" th:text="${p.name}"></option>
-            </select>
+    <!--/* Confirm removal modal */-->
+
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel"
+         aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="deleteModalLabel" th:text="#{hl7.modal.delete}"></h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="col mb-3">
-            <label for="district" th:text="#{hl7.district}" class="form-label"></label>
-            <select th:field="*{district}" class="form-select">
-              <option th:each="d : *{province.childLocations}" th:value="${d.uuid}" th:text="${d.name}"></option>
-            </select>
-          </div>
-        </div>
-
-        <label th:text="#{hl7.healthFacilities}"
-          th:class="${#fields.hasErrors('healthFacilities') ? 'form-label is-invalid': 'form-label'}"></label>
-
-        <br />
-
-        <div class="row">
-
-          <div th:each="partition : ${partitionedHF}" class="col">
-
-            <div th:each="hf : ${partition}"
-              th:class="${#fields.hasErrors('healthFacilities') ? 'form-check is-invalid': 'form-check'}">
-
-              <input type="checkbox" th:field="*{healthFacilities}" th:value="${hf.uuid}"
-                th:class="${#fields.hasErrors('healthFacilities') ? 'form-check-input is-invalid': 'form-check-input'}"
-                aria-describedby="healthFacilitiesInvalidFeedback" />
-              <label th:for="${#ids.prev('healthFacilities')}" th:text="${hf.name}" class="form-check-label"></label>
-
-            </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                    th:text="#{hl7.modal.close}"></button>
+            <form th:method="DELETE">
+              <button type="submit" class="btn btn-danger"
+                      th:text="#{hl7.files.delete}"></button>
+            </form>
           </div>
         </div>
-
-        <div th:if="${#fields.hasErrors('healthFacilities')}"
-          th:id="healthFacilitiesInvalidFeedback"
-          th:errors="*{healthFacilities}" class="invalid-feedback"></div>
-
-        <div th:if="${#lists.isEmpty(#object.district.childLocations)}">
-          <span>
-            <span class="form-text" th:text="#{hl7.healthFacilities.empty}"></span>
-          </span>
-          <br />
-        </div>
-
-        <br/>
-
-        <div class="row">
-          <div class="col mb-3">
-            <label for="filename" th:text="#{hl7.filename}" class="form-label"></label>
-            <div class="input-group">
-              <input type="text"
-                     th:field="*{filename}"
-                     th:class="${#fields.hasErrors('filename') ? 'form-control is-invalid': 'form-control'}"
-                     aria-describedby="filenameHelp"/>
-              <span class="input-group-text" id="basic-addon2">.hl7</span>
-              <div th:if="${#fields.hasErrors('filename')}"
-                   id="filenameHelp"
-                   th:errors="*{filename}" class="invalid-feedback"></div>
-            </div>
-          </div>
-          <div class="col mb-3">
-            <label for="email" th:text="#{hl7.email}" class="form-label"></label>
-            <input type="text"
-                   th:field="*{email}"
-                   th:class="${#fields.hasErrors('email') ? 'form-control is-invalid': 'form-control'}"
-                   aria-describedby="emailHelp"/>
-            <div th:if="${not #fields.hasErrors('email')}"
-                 id="emailHelp" class="form-text"
-                 th:text="#{hl7.email.help}"></div>
-            <div th:if="${#fields.hasErrors('email')}"
-                 id="emailHelp"
-                 th:errors="*{email}" class="invalid-feedback"></div>
-          </div>
-        </div>
-
-        <br />
-
-        <button
-          th:type="submit"
-          th:disabled="${#lists.isEmpty(#object.district.childLocations)}"
-          th:text="#{hl7.submit}"
-          class="btn btn-primary"></button>
-
-      </form>
+      </div>
     </div>
+
+    <!--/* No content message */-->
+
+    <div th:if="${#lists.isEmpty(hl7FileList)}" class="text-center">
+      <p th:text="#{hl7.files.empty}" class="fw-light"></p>
+      <a class="btn btn-primary" th:href="@{/hl7/new}" th:text="#{hl7.nav.generate}"></a>
+    </div>
+
+    <div class="list-group">
+      <div th:each="hl7 : ${hl7FileList}" class="list-group-item list-group-item-action gap-3 py-3" aria-current="true">
+
+        <div class="d-flex gap-2 w-100 justify-content-between">
+
+            <h6 class="mb-0" th:text="${hl7.fileName}"></h6>
+
+            <!--/* Download and Delete buttons */-->
+
+            <div class="btn-group">
+              <a th:if="${hl7.isDone()}"
+                 th:href="@{'/hl7/' + ${hl7.fileName}}"
+                 class="btn btn-light"
+                 th:alt=#{hl7.files.download}
+                 th:title=#{hl7.files.download}>
+                <i class="bi bi-download"></i>
+              </a>
+              <a th:if="${hl7.isProcessing() || hl7.isFailed()}"
+                 href="#"
+                 class="btn btn-light disabled"
+                 th:alt=#{hl7.files.download}
+                 th:title=#{hl7.files.download}>
+                <i class="bi bi-download"></i>
+              </a>
+              <a th:if="${hl7.isDone() || hl7.isFailed()}"
+                 href="#"
+                 class="btn btn-light"
+                 th:alt="#{hl7.files.delete}"
+                 th:title="#{hl7.files.delete}"
+                 data-bs-toggle="modal"
+                 data-bs-target="#deleteModal"
+                 th:data-bs-filename="${hl7.fileName}">
+                <i class="bi bi-trash3"></i>
+              </a>
+              <a th:if="${hl7.isProcessing()}"
+                 href="#"
+                 class="btn btn-light disabled"
+                 th:alt="#{hl7.files.delete}"
+                 th:title="#{hl7.files.delete}"
+                 th:data-bs-filename="${hl7.fileName}">
+                <i class="bi bi-trash3"></i>
+              </a>
+            </div>
+
+        </div>
+
+        <!--/* Processing or last modified time (Status) */-->
+
+        <small th:if="${hl7.isProcessing()}"  class="opacity-75 text-nowrap text-warning" data-processing>
+          <span class="spinner-grow spinner-grow-sm" role="status"></span> <span th:text="#{hl7.files.processing}">A Processar...</span>
+        </small>
+        <small th:if="${hl7.isDone()}" class="opacity-75 text-nowrap text-success">
+          <i class='bi bi-check'></i> <span th:text="${#temporals.format(hl7.lastModifiedTime)}"></span>
+        </small>
+        <small th:if="${hl7.isFailed()}" class="opacity-75 text-nowrap text-danger">
+          <i class="bi bi-exclamation-triangle"></i> <span th:text="#{hl7.files.processing.error}"></span>
+        </small>
+      </div>
+    </div>
+
   </div>
 
   <script th:inline="javascript">
-    'use strict';
+    const deleteModal = document.getElementById('deleteModal')
+    deleteModal.addEventListener('show.bs.modal', event => {
+      // Button that triggered the modal
+      const button = event.relatedTarget
+      // Extract info from data-bs-* attributes
+      const filename = button.getAttribute('data-bs-filename');
+      // Update the modal's content.
+      const modalTitle = deleteModal.querySelector('.modal-title');
+      const form = deleteModal.querySelector('form');
 
-    document.addEventListener("DOMContentLoaded", function() {
-      const provinceSelect = document.getElementById("province");
-      const districtSelect = document.getElementById("district");
-
-      function changeProvince() {
-        const provinceOption = provinceSelect.selectedOptions[0];
-        location.search = `province=${provinceOption.value}`;
-      }
-
-      function changeDistrict() {
-        const provinceOption = provinceSelect.selectedOptions[0];
-        const districtOption = districtSelect.selectedOptions[0];
-        location.search = `province=${provinceOption.value}&district=${districtOption.value}`;
-      }
-
-      provinceSelect.addEventListener("change", changeProvince, false);
-      districtSelect.addEventListener("change", changeDistrict, false);
+      modalTitle.textContent = `[(#{hl7.modal.delete.javascript})]`;
+      form.action = `[(@{/hl7/${filename}})]`;
     });
-  </script>
-</body>
 
+    // Not ideal, but for now reload the page every 5s to get the
+    // latest hl7 status.
+    const processingFiles = document.querySelectorAll("[data-processing]");
+    if (processingFiles.length) {
+      setTimeout(function(){
+        location.reload();
+      }, 5000);
+    }
+
+  </script>
+
+</body>
 </html>

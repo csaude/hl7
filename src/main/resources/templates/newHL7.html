@@ -1,0 +1,144 @@
+<!DOCTYPE HTML>
+<html>
+
+<head th:replace="~{ base :: common_header(~{:: title},~{}) }">
+  <title th:text="#{hl7.generate.file}"></title>
+</head>
+
+<body th:replace="~{ base :: common_body(~{:: .content}, ~{:: script})}">
+
+  <div class="row justify-content-center content">
+
+    <div class="col-lg-8">
+
+      <form action="#" th:action="@{/hl7/new}" th:object="${hl7FileForm}" method="post">
+
+        <div class="row">
+
+          <!--/* Province */-->
+
+          <div class="col-sm-12 col-md-6 mb-3">
+            <label for="province" th:text="#{hl7.province}" class="form-label"></label>
+            <select th:field="*{province}" class="form-select">
+              <option th:each="p : ${allProvinces}" th:value="${p.uuid}" th:text="${p.name}"></option>
+            </select>
+          </div>
+
+          <!--/* District */-->
+
+          <div class="col-sm-12 col-md-6 mb-3">
+            <label for="district" th:text="#{hl7.district}" class="form-label"></label>
+            <select th:field="*{district}" class="form-select">
+              <option th:each="d : *{province.childLocations}" th:value="${d.uuid}" th:text="${d.name}"></option>
+            </select>
+          </div>
+        </div>
+
+        <!--/* Health Facilities */-->
+
+        <label th:text="#{hl7.healthFacilities}"
+          th:class="${#fields.hasErrors('healthFacilities') ? 'form-label is-invalid': 'form-label'}"></label>
+
+        <br />
+
+        <div class="row">
+
+          <div th:each="partition : ${partitionedHF}" class="col">
+
+            <div th:each="hf : ${partition}"
+              th:class="${#fields.hasErrors('healthFacilities') ? 'form-check is-invalid': 'form-check'}">
+
+              <input type="checkbox" th:field="*{healthFacilities}" th:value="${hf.uuid}"
+                th:class="${#fields.hasErrors('healthFacilities') ? 'form-check-input is-invalid': 'form-check-input'}"
+                aria-describedby="healthFacilitiesInvalidFeedback" />
+              <label th:for="${#ids.prev('healthFacilities')}" th:text="${hf.name}" class="form-check-label"></label>
+
+            </div>
+          </div>
+        </div>
+
+        <div th:if="${#fields.hasErrors('healthFacilities')}"
+          th:id="healthFacilitiesInvalidFeedback"
+          th:errors="*{healthFacilities}" class="invalid-feedback"></div>
+
+        <div th:if="${#lists.isEmpty(#object.district.childLocations)}">
+          <span>
+            <span class="form-text" th:text="#{hl7.healthFacilities.empty}"></span>
+          </span>
+          <br />
+        </div>
+
+        <br/>
+
+        <div class="row">
+
+          <!--/* File name */-->
+
+          <div class="col-sm-12 col-md-6 mb-3">
+            <label for="filename" th:text="#{hl7.filename}" class="form-label"></label>
+            <div class="input-group">
+              <input type="text"
+                     th:field="*{filename}"
+                     th:class="${#fields.hasErrors('filename') ? 'form-control is-invalid': 'form-control'}"
+                     aria-describedby="filenameHelp"/>
+              <span class="input-group-text" id="basic-addon2">.hl7</span>
+              <div th:if="${#fields.hasErrors('filename')}"
+                   id="filenameHelp"
+                   th:errors="*{filename}" class="invalid-feedback"></div>
+            </div>
+          </div>
+
+          <!--/* E-mail */-->
+
+          <div class="col-sm-12 col-md-6 mb-3">
+            <label for="email" th:text="#{hl7.email}" class="form-label"></label>
+            <input type="text"
+                   th:field="*{email}"
+                   th:class="${#fields.hasErrors('email') ? 'form-control is-invalid': 'form-control'}"
+                   aria-describedby="emailHelp"/>
+            <div th:if="${not #fields.hasErrors('email')}"
+                 id="emailHelp" class="form-text"
+                 th:text="#{hl7.email.help}"></div>
+            <div th:if="${#fields.hasErrors('email')}"
+                 id="emailHelp"
+                 th:errors="*{email}" class="invalid-feedback"></div>
+          </div>
+        </div>
+
+        <br />
+
+        <button
+          th:type="submit"
+          th:disabled="${#lists.isEmpty(#object.district.childLocations)}"
+          th:text="#{hl7.submit}"
+          class="btn btn-primary"></button>
+
+      </form>
+    </div>
+  </div>
+
+  <script th:inline="javascript">
+    'use strict';
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const provinceSelect = document.getElementById("province");
+      const districtSelect = document.getElementById("district");
+
+      function changeProvince() {
+        const provinceOption = provinceSelect.selectedOptions[0];
+        location.search = `province=${provinceOption.value}`;
+      }
+
+      function changeDistrict() {
+        const provinceOption = provinceSelect.selectedOptions[0];
+        const districtOption = districtSelect.selectedOptions[0];
+        location.search = `province=${provinceOption.value}&district=${districtOption.value}`;
+      }
+
+      provinceSelect.addEventListener("change", changeProvince, false);
+      districtSelect.addEventListener("change", changeDistrict, false);
+    });
+  </script>
+</body>
+
+</html>
