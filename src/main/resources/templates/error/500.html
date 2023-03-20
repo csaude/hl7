@@ -1,0 +1,20 @@
+<!DOCTYPE HTML>
+<html>
+
+<head th:replace="~{base :: common_header(~{:: title},~{}) }">
+  <title th:text="#{hl7.error.500.title}"></title>
+</head>
+
+<body th:replace="~{base :: common_body(~{:: .jumbotron},~{}) }">
+  <div class="jumbotron p-5 mb-4 rounded-3 text-center">
+    <div class="container-fluid py-5">
+      <h1 class="display-5 fw-bold">500</h1>
+      <small th:text="#{hl7.tool.name} + ' - ' + '' + ${appVersion}"></small>
+      <p class="col-md-12 fs-4" th:text="#{hl7.error.500.help}"></p>
+      <p th:utext="#{hl7.tool.helpdesk}"></p>
+      <a class="btn btn-primary" th:href="@{/hl7}" th:text="#{hl7.goto.start}"></a>
+    </div>
+  </div>
+</body>
+
+</html>
