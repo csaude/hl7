@@ -28,6 +28,7 @@ import mz.org.fgh.hl7.dao.Hl7FileGeneratorDao;
 import mz.org.fgh.hl7.generator.AdtMessageFactory;
 import mz.org.fgh.hl7.model.HL7File;
 import mz.org.fgh.hl7.model.Location;
+import mz.org.fgh.hl7.model.PatientDemographic;
 import mz.org.fgh.hl7.model.HL7File.ProcessingStatus;
 import mz.org.fgh.hl7.util.Util;
 
@@ -172,23 +173,50 @@ public class Hl7ServiceImpl implements Hl7Service {
 					+ "||Patient_Demographic_Data.hl7|" + "WEEKLY HL7 UPLOAD|00009972|\rBHS|^~\\&|XYZSYS|XYZ "
 					+ "DEFAULT_LOCATION_NAME" + "|DISA*LAB|SGP|" + currentTimeStamp + "||||00010223\r";
 
-			// create the HL7 message
-			List<ADT_A24> adtMessages = AdtMessageFactory.createMessage("A24",
-					hl7FileGeneratorDao.getPatientDemographicData(locationsByUuid));
-
+			// create and write the HL7 message to file
+			log.info("Fetching patient demographics.");
+			List<PatientDemographic> patientDemographics = hl7FileGeneratorDao.getPatientDemographicData(locationsByUuid);
 			PipeParser pipeParser = new PipeParser();
 			pipeParser.getParserConfiguration();
+			log.info("Done fetching patient demographics.");
 
 			// serialize the message to pipe delimited output file
-			writeMessageToFile(pipeParser, adtMessages, processing, headers);
+			try (OutputStream outputStream = Files.newOutputStream(processing)) {
+
+				log.info("Serializing message to file...");
+
+				outputStream.write(headers.getBytes());
+
+				for (PatientDemographic patient : patientDemographics) {
+					ADT_A24 adtMessage = AdtMessageFactory.createMessage("A24", patient);
+					outputStream.write(pipeParser.encode(adtMessage).getBytes());
+					outputStream.write(System.getProperty("line.separator").getBytes());
+					outputStream.flush();
+				}
+
+				String footers = "BTS|" + String.valueOf(patientDemographics.size()) + "\rFTS|1";
+
+				outputStream.write(footers.getBytes());
+
+				// Remove the dot from file name to mark as done processing
+				String processingfileName = processing.getFileName().toString();
+				String doneFileName = processingfileName.split("\\.")[1];
+				Path donePath = processing.resolveSibling(doneFileName + HL7_EXTENSION);
+				Files.move(processing, donePath);
+
+				log.info("Message serialized to file {} successfully", donePath);
+			}
 
 			processingStatus.put(key, ProcessingStatus.DONE);
 
-		} catch (IOException e) {
+		} catch (Exception e) {
 
 			processingStatus.put(key, ProcessingStatus.FAILED);
 
+			log.error("Error creating hl7", e);
+
 			throw new AppException("hl7.create.error", e);
+
 		}
 
 	}
@@ -244,40 +272,6 @@ public class Hl7ServiceImpl implements Hl7Service {
 	private void checkIfInHL7Folder(Path path) {
 		if (!path.normalize().startsWith(Paths.get(hl7FolderName))) {
 			throw new AppException("hl7.error.folder");
-		}
-	}
-
-	private void writeMessageToFile(
-			Parser parser,
-			List<ADT_A24> adtMessages,
-			Path outputPath,
-			String headers) throws IOException, HL7Exception {
-
-		log.info("writeMessageToFile called...");
-
-		try (OutputStream outputStream = Files.newOutputStream(outputPath)) {
-
-			log.info("Serializing message to file...");
-
-			outputStream.write(headers.getBytes());
-
-			for (ADT_A24 adt_A24 : adtMessages) {
-				outputStream.write(parser.encode(adt_A24).getBytes());
-				outputStream.write(System.getProperty("line.separator").getBytes());
-				outputStream.flush();
-			}
-
-			String footers = "BTS|" + String.valueOf(adtMessages.size()) + "\rFTS|1";
-
-			outputStream.write(footers.getBytes());
-
-			// Remove the dot from file name to mark as done processing
-			String processingfileName = outputPath.getFileName().toString();
-			String doneFileName = processingfileName.split("\\.")[1];
-			Path donePath = outputPath.resolveSibling(doneFileName + HL7_EXTENSION);
-			Files.move(outputPath, donePath);
-
-			log.info("Message serialized to file {} successfully", donePath);
 		}
 	}
 }
