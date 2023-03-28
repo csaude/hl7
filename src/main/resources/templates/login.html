@@ -1,0 +1,70 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title th:text="#{hl7.index.title}"></title>
+
+  <link href="/webjars/bootstrap/5.2.3/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/webjars/bootstrap-icons/1.10.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      padding-top: 40px;
+      padding-bottom: 40px;
+      background-color: #f5f5f5;
+    }
+
+    .form-signin {
+      max-width: 330px;
+      padding: 15px;
+    }
+
+    .form-signin .form-floating:focus-within {
+      z-index: 2;
+    }
+
+    .form-signin input[type="text"] {
+      margin-bottom: -1px;
+      border-bottom-right-radius: 0;
+      border-bottom-left-radius: 0;
+    }
+
+    .form-signin input[type="password"] {
+      margin-bottom: 10px;
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+    }
+  </style>
+</head>
+
+<body class="text-center">
+
+  <main class="form-signin w-100 m-auto">
+    <div class="text-danger" th:if="${param.error}" th:text="#{hl7.login.error}"></div>
+    <form th:action="@{/login}" method="post">
+      <div class="form-floating">
+        <input id="username" name="username" type="text" class="form-control" placeholder="Utilizador">
+        <label for="username" th:text="#{hl7.username}">Utilizador</label>
+      </div>
+      <div class="form-floating">
+        <input id="password" name="password" type="password" class="form-control" placeholder="Senha">
+        <label for="password" th:text="#{hl7.password}">Senha</label>
+      </div>
+
+      <button class="w-100 btn btn-lg btn-primary" type="submit" th:text="#{hl7.login}">Entrar</button>
+      <p class="mt-5 mb-3 text-muted" th:text="${appVersion}"></p>
+    </form>
+  </main>
+</body>
+
+</html>
