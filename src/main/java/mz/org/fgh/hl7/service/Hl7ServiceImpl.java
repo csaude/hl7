@@ -13,6 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.annotation.PostConstruct;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,8 +29,8 @@ import mz.org.fgh.hl7.AppException;
 import mz.org.fgh.hl7.dao.Hl7FileGeneratorDao;
 import mz.org.fgh.hl7.generator.AdtMessageFactory;
 import mz.org.fgh.hl7.model.HL7File;
-import mz.org.fgh.hl7.model.Location;
 import mz.org.fgh.hl7.model.HL7File.ProcessingStatus;
+import mz.org.fgh.hl7.model.Location;
 import mz.org.fgh.hl7.util.Util;
 
 @Service
@@ -49,6 +51,33 @@ public class Hl7ServiceImpl implements Hl7Service {
 	public Hl7ServiceImpl(Hl7FileGeneratorDao hl7FileGeneratorDao, @Value("${app.hl7.folder}") String hl7FolderName) {
 		this.hl7FileGeneratorDao = hl7FileGeneratorDao;
 		this.hl7FolderName = hl7FolderName;
+	}
+
+	@PostConstruct
+	public void initProcessingStatusMap() throws IOException {
+		Path path = Paths.get(hl7FolderName);
+		try (Stream<Path> paths = Files.list(path)) {
+			paths
+				.filter(p -> p.toString().endsWith(HL7_EXTENSION))
+				.forEach(p -> {
+					String filename = p.getFileName().toString();
+					// Get the processing status map key, which should be the
+					// filename without PROCESSING_PREFIX.
+					String key = filename;
+					if (key.startsWith(PROCESSING_PREFIX)) {
+						key = key.substring(1);
+					}
+
+					// If prefix is present it means that it either failed, or it is processing.
+					// We'll consider the processing as failed because if it is not yet in the
+					// processing status map, the app probably crashed.
+					if (filename.startsWith(PROCESSING_PREFIX)) {
+						processingStatus.put(key, ProcessingStatus.FAILED);
+					} else {
+						processingStatus.put(key, ProcessingStatus.DONE);
+					}
+				});
+		}
 	}
 
 	public List<HL7File> findAll() {
@@ -213,23 +242,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 			if (key.startsWith(PROCESSING_PREFIX)) {
 				key = key.substring(1);
 			}
-			ProcessingStatus status = processingStatus.get(key);
-
-			// If not in the processing status map, we need to add it to the map.
-			if (status == null) {
-				// If prefix is present it means that it either failed, or it is processing.
-				// We'll consider the processing as failed because if it is not yet in the
-				// processing status map, the app probably crashed.
-				if (filename.startsWith(PROCESSING_PREFIX)) {
-					hl7.setProcessingStatus(ProcessingStatus.FAILED);
-					processingStatus.put(key, ProcessingStatus.FAILED);
-				} else {
-					hl7.setProcessingStatus(ProcessingStatus.DONE);
-					processingStatus.put(key, ProcessingStatus.DONE);
-				}
-			} else {
-				hl7.setProcessingStatus(status);
-			}
+			hl7.setProcessingStatus(processingStatus.get(key));
 
 			BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
 			LocalDateTime lastModified = attrs.lastModifiedTime().toInstant().atZone(ZoneId.systemDefault())
