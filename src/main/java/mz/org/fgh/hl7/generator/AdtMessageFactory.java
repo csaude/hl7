@@ -15,7 +15,7 @@ public class AdtMessageFactory {
 
 	static final Logger LOG = Logger.getLogger(AdtMessageFactory.class.getName());
 
-	public static List<ADT_A24> createMessage(String messageType, List<PatientDemographic> demographics)
+	public static ADT_A24 createMessage(String messageType, PatientDemographic demographics)
 	        throws HL7Exception, IOException {
 
 		if (messageType.equals("A24")) {

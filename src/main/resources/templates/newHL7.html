@@ -87,22 +87,6 @@
                    th:errors="*{filename}" class="invalid-feedback"></div>
             </div>
           </div>
-
-          <!--/* E-mail */-->
-
-          <div class="col-sm-12 col-md-6 mb-3">
-            <label for="email" th:text="#{hl7.email}" class="form-label"></label>
-            <input type="text"
-                   th:field="*{email}"
-                   th:class="${#fields.hasErrors('email') ? 'form-control is-invalid': 'form-control'}"
-                   aria-describedby="emailHelp"/>
-            <div th:if="${not #fields.hasErrors('email')}"
-                 id="emailHelp" class="form-text"
-                 th:text="#{hl7.email.help}"></div>
-            <div th:if="${#fields.hasErrors('email')}"
-                 id="emailHelp"
-                 th:errors="*{email}" class="invalid-feedback"></div>
-          </div>
         </div>
 
         <br />

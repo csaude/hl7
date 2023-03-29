@@ -25,25 +25,14 @@ public class OurAdtA04MessageBuilder {
 
 	private ADT_A24 _adtMessage;
 
-	public List<ADT_A24> Build(List<PatientDemographic> demographics) throws HL7Exception, IOException {
-
+	public ADT_A24 Build(PatientDemographic demographic) throws HL7Exception, IOException {
 		String currentDateTimeString = Util.getCurrentTimeStamp();
-
-		List<ADT_A24> adt_A04s = new ArrayList<ADT_A24>();
-
-		LOG.info("Iterating ADT A24 started...");
-		for (PatientDemographic demographic : demographics) {
-			_adtMessage = new ADT_A24();
-			_adtMessage.initQuickstart("ADT", "A24", "P");
-			createMshSegment(currentDateTimeString, demographic);
-			createPidSegment(demographic);
-			createPv1Segment(demographic);
-			adt_A04s.add(_adtMessage);
-		}
-		demographics = null;
-		LOG.info("Iterating ADT A24 ended...");
-
-		return adt_A04s;
+		_adtMessage = new ADT_A24();
+		_adtMessage.initQuickstart("ADT", "A24", "P");
+		createMshSegment(currentDateTimeString, demographic);
+		createPidSegment(demographic);
+		createPv1Segment(demographic);
+		return _adtMessage;
 	}
 
 	private void createMshSegment(String currentDateTimeString, PatientDemographic demographic) throws DataTypeException {
