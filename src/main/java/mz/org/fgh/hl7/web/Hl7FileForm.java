@@ -2,7 +2,6 @@ package mz.org.fgh.hl7.web;
 
 import java.util.List;
 
-import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -15,10 +14,6 @@ import mz.org.fgh.hl7.model.Location;
 public class Hl7FileForm {
 
     public static final String FILENAME_CHARS = "[a-zA-Z0-9 _]";
-
-    @NotBlank(message = "{hl7.validation.fileform.email.NotBlank.message}")
-    @Email(message = "{hl7.validation.fileform.email.Email.message}")
-    private String email;
 
     @NotBlank(message = "{hl7.validation.fileform.filename.NotBlank.message}")
     @Pattern(regexp = "^" + FILENAME_CHARS
