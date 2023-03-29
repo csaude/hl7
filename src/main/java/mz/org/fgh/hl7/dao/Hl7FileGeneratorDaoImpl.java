@@ -12,14 +12,14 @@ import mz.org.fgh.hl7.util.Util;
 
 @Repository
 public class Hl7FileGeneratorDaoImpl implements Hl7FileGeneratorDao {
-	
-	@Autowired 
+
+	@Autowired
 	private JdbcTemplate jdbcTemplate;
-	
+
 	private String sql;
-	
+
 	public List<PatientDemographic> getPatientDemographicData(List<String> locationsByUuid) {
-		
+
 		sql = "select REPLACE(REPLACE(pid.identifier, '\r', ''), '\n', ' ') pid,"
 		        + "		pe.gender,"
 		        + "		pe.birthdate,"
@@ -61,9 +61,9 @@ public class Hl7FileGeneratorDaoImpl implements Hl7FileGeneratorDao {
 		        + ") pat2 on pat2.person_id=p.patient_id "
 		        + " where p.voided=0 and pe.voided=0 AND LENGTH(pid.identifier) = 21 AND pid.lUuid IN ("
 		        + Util.listToString(locationsByUuid) + ") GROUP BY pid.identifier;";
-				
+
 				List<PatientDemographic> patientDemographics = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(PatientDemographic.class));
-		
+
 		return patientDemographics;
 	}
 
