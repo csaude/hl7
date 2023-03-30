@@ -20,7 +20,7 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
                     th:text="#{hl7.modal.close}"></button>
-            <form th:method="DELETE">
+            <form th:action="'#'" th:method="DELETE">
               <button type="submit" class="btn btn-danger"
                       th:text="#{hl7.files.delete}"></button>
             </form>
