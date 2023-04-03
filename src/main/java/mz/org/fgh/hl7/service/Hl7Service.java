@@ -9,7 +9,6 @@ import mz.org.fgh.hl7.model.Location;
 public interface Hl7Service {
 	public void validateCreate(String filename);
 	public void create(String fileName, List<Location> locations) throws HL7Exception;
-    public byte[] read(String filename);
     public void delete(String filename);
     public List<HL7File> findAll();
 }

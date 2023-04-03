@@ -61,22 +61,6 @@
                 <i class="bi bi-search"></i>
               </a>
 
-              <!--/* Download button */-->
-              <a th:if="${hl7.isDone()}"
-                 th:href="@{'/hl7/' + ${hl7.fileName}}"
-                 class="btn btn-light"
-                 th:alt=#{hl7.files.download}
-                 th:title=#{hl7.files.download}>
-                <i class="bi bi-download"></i>
-              </a>
-              <a th:if="${hl7.isProcessing() || hl7.isFailed()}"
-                 href="#"
-                 class="btn btn-light disabled"
-                 th:alt=#{hl7.files.download}
-                 th:title=#{hl7.files.download}>
-                <i class="bi bi-download"></i>
-              </a>
-
               <!--/* Delete button */-->
               <a th:if="${hl7.isDone() || hl7.isFailed()}"
                  href="#"
