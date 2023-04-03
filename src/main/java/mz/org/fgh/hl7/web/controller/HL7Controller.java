@@ -55,17 +55,6 @@ public class HL7Controller {
         return "hl7";
     }
 
-    @GetMapping("/{filename:^" + Hl7FileForm.FILENAME_CHARS + "*\\.hl7$}")
-    public ResponseEntity<ByteArrayResource> download(@PathVariable String filename) {
-        ByteArrayResource resource = new ByteArrayResource(hl7Service.read(filename));
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentDispositionFormData("attachment", filename);
-
-        return new ResponseEntity<>(resource, headers, HttpStatus.OK);
-    }
-
     @DeleteMapping("/{filename:^" + Hl7FileForm.FILENAME_CHARS + "*\\.hl7$}")
     public String delete(@PathVariable String filename, RedirectAttributes redirectAttrs) {
         try {

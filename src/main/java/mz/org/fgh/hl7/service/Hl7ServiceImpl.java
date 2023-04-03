@@ -107,32 +107,6 @@ public class Hl7ServiceImpl implements Hl7Service {
 		}
 	}
 
-	public byte[] read(String filename) {
-
-		Path path = Paths.get(hl7FolderName).resolve(filename);
-
-		// Should not read file being processed
-		if (Files.exists(path.resolveSibling(PROCESSING_PREFIX + filename))) {
-			throw new AppException("hl7.read.error.processing");
-		}
-
-		// Should not read non hl7 files
-		HL7File hl7 = buildHL7File(path);
-		int dotIndex = hl7.getFileName().lastIndexOf(".");
-		if (dotIndex > 0 && !hl7.getFileName().substring(dotIndex).equals(HL7_EXTENSION)) {
-			throw new AppException("hl7.read.error.notHL7");
-		}
-
-		// Should not read files outside defined hl7 folder
-		checkIfInHL7Folder(path);
-
-		try {
-			return Files.readAllBytes(path);
-		} catch (IOException e) {
-			throw new AppException("hl7.read.error", e);
-		}
-	}
-
 	public void validateCreate(String filename) {
 
 		Path processing = Paths.get(hl7FolderName)
