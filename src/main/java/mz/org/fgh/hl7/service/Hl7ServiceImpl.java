@@ -54,8 +54,20 @@ public class Hl7ServiceImpl implements Hl7Service {
 	}
 
 	@PostConstruct
-	public void initProcessingStatusMap() throws IOException {
+	public void init() throws IOException {
 		Path path = Paths.get(hl7FolderName);
+
+		// Create HL7 folder if it does not exist
+		if (!Files.exists(path)) {
+            try {
+                Files.createDirectories(path);
+                log.info("Created folder {}", hl7FolderName);
+            } catch (IOException e) {
+                log.error(String.format("Could not create folder %s", hl7FolderName), e);
+            }
+        }
+
+		// Build processing status map
 		try (Stream<Path> paths = Files.list(path)) {
 			paths
 				.filter(p -> p.toString().endsWith(HL7_EXTENSION))
