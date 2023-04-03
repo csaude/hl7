@@ -22,7 +22,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import ca.uhn.hl7v2.HL7Exception;
-import ca.uhn.hl7v2.model.v25.message.ADT_A24;
+import ca.uhn.hl7v2.model.v251.message.ADT_A24;
 import ca.uhn.hl7v2.parser.PipeParser;
 import mz.org.fgh.hl7.AppException;
 import mz.org.fgh.hl7.dao.Hl7FileGeneratorDao;

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import ca.uhn.hl7v2.HL7Exception;
-import ca.uhn.hl7v2.model.v25.message.ADT_A24;
+import ca.uhn.hl7v2.model.v251.message.ADT_A24;
 import mz.org.fgh.hl7.model.PatientDemographic;
 
 /**
