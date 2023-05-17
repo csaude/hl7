@@ -1,36 +1,36 @@
 package mz.org.fgh.hl7.web.controller;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.Future;
 
-import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 
 import org.apache.commons.collections4.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import ca.uhn.hl7v2.HL7Exception;
 import mz.org.fgh.hl7.AppException;
+import mz.org.fgh.hl7.model.HL7File;
 import mz.org.fgh.hl7.model.Location;
+import mz.org.fgh.hl7.model.PatientDemographic;
 import mz.org.fgh.hl7.service.Hl7Service;
 import mz.org.fgh.hl7.service.LocationService;
 import mz.org.fgh.hl7.web.Alert;
 import mz.org.fgh.hl7.web.Hl7FileForm;
+import mz.org.fgh.hl7.web.SearchForm;
 
 @Controller
 @RequestMapping("/hl7")
@@ -49,26 +49,29 @@ public class HL7Controller {
         this.hl7Service = hl7Service;
     }
 
-    @GetMapping
-    public String findAll(Model model) {
-        model.addAttribute("hl7FileList", hl7Service.findAll());
-        return "hl7";
+    @ModelAttribute("searchAvailable")
+    public boolean isSearchAvailable() {
+        return hl7Service.isSearchAvailable();
     }
 
-    @DeleteMapping("/{filename:^" + Hl7FileForm.FILENAME_CHARS + "*\\.hl7$}")
-    public String delete(@PathVariable String filename, RedirectAttributes redirectAttrs) {
-        try {
-            hl7Service.delete(filename);
-            redirectAttrs.addFlashAttribute(Alert.success("hl7.files.deleted"));
-        } catch (AppException e) {
-            LOG.error(e.getMessage(), e);
-            redirectAttrs.addFlashAttribute(Alert.danger(e.getLocalizedMessage()));
-        } finally {
-            return "redirect:/hl7";
-        }
+    @ModelAttribute("needsNewFile")
+    public boolean needsNewFile() {
+        return hl7Service.getHl7File() == null
+                && hl7Service.getPreviousHl7File() == null;
     }
 
-    @GetMapping("/new")
+    @ModelAttribute("previousLastModifiedTime")
+    public LocalDateTime getPreviousLastModifiedTime() {
+        HL7File previousHl7File = hl7Service.getPreviousHl7File();
+        return previousHl7File != null ? previousHl7File.getLastModifiedTime() : null;
+    }
+
+    @ModelAttribute("hl7File")
+    public Future<HL7File> getHl7File() {
+        return hl7Service.getHl7File();
+    }
+
+    @GetMapping("/config")
     public String newHL7Form(
             Hl7FileForm hl7FileForm,
             Model model,
@@ -79,41 +82,54 @@ public class HL7Controller {
         } catch (AppException e) {
             LOG.error(e.getMessage(), e);
             redirectAttrs.addFlashAttribute(Alert.danger(e.getMessage()));
-            return "redirect:/hl7";
+            return "redirect:/hl7/search";
         }
-        return "newHL7";
+        return "config";
     }
 
-    @PostMapping("/new")
+    @PostMapping("/config")
     public String createHL7(
             @Valid Hl7FileForm hl7FileForm,
             BindingResult result,
             Model model,
-            HttpSession session,
             RedirectAttributes redirectAttrs) throws HL7Exception, IOException {
 
         if (result.hasErrors()) {
             return newHL7Form(hl7FileForm, model, redirectAttrs);
         }
 
-        try {
-
-            hl7Service.validateCreate(hl7FileForm.getFilename());
-
-        } catch (AppException e) {
-            LOG.error(e.getMessage(), e);
-            if (e.getMessage().equals("hl7.create.error.exists")) {
-                result.rejectValue("filename", e.getMessage());
-            } else {
-                model.addAttribute(Alert.danger(e.getMessage()));
-            }
-            return newHL7Form(hl7FileForm, model, redirectAttrs);
-        }
-
-        hl7Service.create(hl7FileForm.getFilename(), hl7FileForm.getHealthFacilities());
+        hl7Service.generateHl7File(hl7FileForm.getHealthFacilities());
 
         redirectAttrs.addFlashAttribute(Alert.success("hl7.schedule.success"));
-        return "redirect:/hl7";
+        return "redirect:/hl7/search";
+    }
+
+    @GetMapping("/search")
+    public String search(@Valid SearchForm searchForm,
+            BindingResult bindingResult,
+            Model model) throws FileNotFoundException {
+
+        try {
+
+            if (bindingResult.hasErrors() || StringUtils.isEmpty(searchForm.getPartialNid())) {
+                return "search";
+            }
+
+            List<PatientDemographic> search = hl7Service.search(searchForm.getPartialNid());
+
+            if (search.isEmpty()) {
+                model.addAttribute("errorMessage",
+                        "Não encontramos nenhum item que corresponda à sua consulta de pesquisa.");
+            } else {
+                model.addAttribute("hl7Patients", search);
+            }
+
+        } catch (AppException e) {
+            model.addAttribute(Alert.danger(e.getMessage()));
+        }
+
+        return "search";
+
     }
 
     private void setAllProvinces(Hl7FileForm hl7FileForm, Model model) {

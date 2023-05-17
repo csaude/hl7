@@ -1,6 +1,10 @@
 package mz.org.fgh.hl7.service;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -8,10 +12,10 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.annotation.PostConstruct;
 
@@ -22,13 +26,15 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import ca.uhn.hl7v2.HL7Exception;
+import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.v251.message.ADT_A24;
+import ca.uhn.hl7v2.model.v251.segment.PID;
 import ca.uhn.hl7v2.parser.PipeParser;
+import ca.uhn.hl7v2.util.Hl7InputStreamMessageIterator;
 import mz.org.fgh.hl7.AppException;
 import mz.org.fgh.hl7.dao.Hl7FileGeneratorDao;
 import mz.org.fgh.hl7.generator.AdtMessageFactory;
 import mz.org.fgh.hl7.model.HL7File;
-import mz.org.fgh.hl7.model.HL7File.ProcessingStatus;
 import mz.org.fgh.hl7.model.Location;
 import mz.org.fgh.hl7.model.PatientDemographic;
 import mz.org.fgh.hl7.util.Util;
@@ -42,15 +48,23 @@ public class Hl7ServiceImpl implements Hl7Service {
 
 	private static String HL7_EXTENSION = ".hl7";
 
-	private final ConcurrentHashMap<String, ProcessingStatus> processingStatus = new ConcurrentHashMap<>();
+	private CompletableFuture<HL7File> hl7FileFuture;
+
+	private HL7File previousHl7File;
 
 	private Hl7FileGeneratorDao hl7FileGeneratorDao;
 
 	private String hl7FolderName;
 
-	public Hl7ServiceImpl(Hl7FileGeneratorDao hl7FileGeneratorDao, @Value("${app.hl7.folder}") String hl7FolderName) {
+	private String hl7FileName;
+
+	public Hl7ServiceImpl(
+			Hl7FileGeneratorDao hl7FileGeneratorDao,
+			@Value("${app.hl7.folder}") String hl7FolderName,
+			@Value("${app.hl7.filename}") String fileName) {
 		this.hl7FileGeneratorDao = hl7FileGeneratorDao;
 		this.hl7FolderName = hl7FolderName;
+		this.hl7FileName = fileName;
 	}
 
 	@PostConstruct
@@ -59,122 +73,62 @@ public class Hl7ServiceImpl implements Hl7Service {
 
 		// Create HL7 folder if it does not exist
 		if (!Files.exists(path)) {
-            try {
-                Files.createDirectories(path);
-                log.info("Created folder {}", hl7FolderName);
-            } catch (IOException e) {
-                log.error(String.format("Could not create folder %s", hl7FolderName), e);
-            }
-        }
-
-		// Build processing status map
-		try (Stream<Path> paths = Files.list(path)) {
-			paths
-				.filter(p -> p.toString().endsWith(HL7_EXTENSION))
-				.forEach(p -> {
-					String filename = p.getFileName().toString();
-					// Get the processing status map key, which should be the
-					// filename without PROCESSING_PREFIX.
-					String key = filename;
-					if (key.startsWith(PROCESSING_PREFIX)) {
-						key = key.substring(1);
-					}
-
-					// If prefix is present it means that it either failed, or it is processing.
-					// We'll consider the processing as failed because if it is not yet in the
-					// processing status map, the app probably crashed.
-					if (filename.startsWith(PROCESSING_PREFIX)) {
-						processingStatus.put(key, ProcessingStatus.FAILED);
-					} else {
-						processingStatus.put(key, ProcessingStatus.DONE);
-					}
-				});
-		}
-	}
-
-	public List<HL7File> findAll() {
-		try {
-			Path path = Paths.get(hl7FolderName);
-			try (Stream<Path> paths = Files.list(path)) {
-				return paths
-						.filter(p -> p.toString().endsWith(HL7_EXTENSION))
-						.map(this::buildHL7File)
-						.sorted((a, b) -> b.getLastModifiedTime().compareTo(a.getLastModifiedTime()))
-						.collect(Collectors.toList());
+			try {
+				Files.createDirectories(path);
+				log.info("Created folder {}", hl7FolderName);
+			} catch (IOException e) {
+				log.error(String.format("Could not create folder %s", hl7FolderName), e);
 			}
-		} catch (IOException e) {
-			throw new AppException("While listing hl7 file directory", e);
+		}
+
+		// Check if there is a previous processing file
+		Path processing = Paths.get(path.toString(), PROCESSING_PREFIX + hl7FileName + HL7_EXTENSION);
+		Path done = Paths.get(path.toString(), hl7FileName + HL7_EXTENSION);
+		// If there is a previously processed file, delete the temporary file because
+		// the previous execution did not finish.
+		if (Files.exists(done)) {
+			// TODO load serialized HL7File
+			HL7File hl7File = new HL7File();
+			hl7File.setLastModifiedTime(getFileLastModifiedTime());
+			hl7FileFuture = CompletableFuture.completedFuture(hl7File);
+			if (Files.exists(processing))
+				Files.delete(processing);
+		} else if (Files.exists(processing)) {
+			Files.delete(processing);
+			hl7FileFuture = new CompletableFuture<>();
+			hl7FileFuture.completeExceptionally(new AppException("Previous HL7 file generation did not finish."));
 		}
 	}
 
-	public void validateCreate(String filename) {
-
-		Path processing = Paths.get(hl7FolderName)
-				.resolve(PROCESSING_PREFIX + filename + HL7_EXTENSION);
-
-		Path processed = processing.resolveSibling(filename + HL7_EXTENSION);
-
-		// Should not create existing file
-		String key = processed.getFileName().toString();
-		if (processingStatus.containsKey(key)) {
-			throw new AppException("hl7.create.error.exists");
-		}
-
-		// Should not create files outside defined hl7 folder
-		checkIfInHL7Folder(processing);
+	@Override
+	public CompletableFuture<HL7File> getHl7File() {
+		return hl7FileFuture;
 	}
 
-	public void delete(String filename) {
-
-		Path path = Paths.get(hl7FolderName).resolve(filename);
-
-		// Should not delete processing file
-		if (processingStatus.get(filename) == ProcessingStatus.PROCESSING) {
-			throw new AppException("hl7.delete.error.processing");
-		}
-
-		// Should not delete file outside defined hl7 folder
-		checkIfInHL7Folder(path);
-
-		try {
-
-			Path deletePath = path;
-			// If it failed it should still have the PROCESSING_PREFIX, so
-			// we need to make sure to delete the correct filename.
-			if (processingStatus.get(filename) == ProcessingStatus.FAILED) {
-				deletePath = path.resolveSibling(PROCESSING_PREFIX + path.getFileName().toString());
-			}
-
-			Files.delete(deletePath);
-
-			processingStatus.remove(filename);
-
-		} catch (IOException e) {
-			throw new AppException("hl7.delete.error", e);
-		}
+	@Override
+	public HL7File getPreviousHl7File() {
+		return previousHl7File;
 	}
 
 	@Async
-	public void create(String fileName, List<Location> locations) throws HL7Exception {
+	@Override
+	public CompletableFuture<HL7File> generateHl7File(List<Location> locations) throws HL7Exception {
 
-		validateCreate(fileName);
+		if (hl7FileFuture != null && !hl7FileFuture.isDone()) {
+			throw new AppException(
+					"Previous HL7 file generation is not yet done. Cancel it if you want to start a new one.");
+		}
 
 		Path processing = Paths.get(hl7FolderName)
-				.resolve(PROCESSING_PREFIX + fileName + HL7_EXTENSION);
-
-		Path processed = processing.resolveSibling(fileName + HL7_EXTENSION);
-
-		String key = processed.getFileName().toString();
+				.resolve(PROCESSING_PREFIX + hl7FileName + HL7_EXTENSION);
 
 		try {
 
+			hl7FileFuture = new CompletableFuture<>();
+
 			log.info("createHl7File called...");
 
-			// File should be created as early as possible so that it
-			// is possible to see it processing.
 			Files.createFile(processing);
-
-			processingStatus.put(key, ProcessingStatus.PROCESSING);
 
 			List<String> locationsByUuid = locations.stream()
 					.map(Location::getUuid)
@@ -189,7 +143,8 @@ public class Hl7ServiceImpl implements Hl7Service {
 
 			// create and write the HL7 message to file
 			log.info("Fetching patient demographics.");
-			List<PatientDemographic> patientDemographics = hl7FileGeneratorDao.getPatientDemographicData(locationsByUuid);
+			List<PatientDemographic> patientDemographics = hl7FileGeneratorDao
+					.getPatientDemographicData(locationsByUuid);
 			PipeParser pipeParser = new PipeParser();
 			pipeParser.getParserConfiguration();
 			log.info("Done fetching patient demographics.");
@@ -216,60 +171,119 @@ public class Hl7ServiceImpl implements Hl7Service {
 				String processingfileName = processing.getFileName().toString();
 				String doneFileName = processingfileName.split("\\.")[1];
 				Path donePath = processing.resolveSibling(doneFileName + HL7_EXTENSION);
+				// Remove previous processed file before renaming
+				if (Files.exists(donePath)) {
+					Files.delete(donePath);
+				}
 				Files.move(processing, donePath);
 
 				log.info("Message serialized to file {} successfully", donePath);
-			}
 
-			processingStatus.put(key, ProcessingStatus.DONE);
+
+				HL7File hl7File = new HL7File();
+				hl7File.setLastModifiedTime(getFileLastModifiedTime());
+				// TODO set province and district
+				hl7File.setHealthFacilities(locations);
+
+				// Set this as the previous successfuly generated HL7 file
+				previousHl7File = hl7File;
+
+				hl7FileFuture.complete(hl7File);
+			}
 
 		} catch (Exception e) {
 
-			processingStatus.put(key, ProcessingStatus.FAILED);
-
 			log.error("Error creating hl7", e);
 
-			throw new AppException("hl7.create.error", e);
+			if (hl7FileFuture == null) {
+				hl7FileFuture = new CompletableFuture<>();
+			}
+			hl7FileFuture.completeExceptionally(e);
 
+		} finally {
+			if (Files.exists(processing)) {
+				try {
+					Files.delete(processing);
+				} catch (IOException e) {
+					log.error("Error deleting processing file", e);
+				}
+			}
 		}
 
+		return hl7FileFuture;
 	}
 
-	private HL7File buildHL7File(Path path) {
+	public boolean isSearchAvailable() {
+		if (previousHl7File != null) {
+			return true;
+		} else {
+			return hl7FileFuture != null && !hl7FileFuture.isCompletedExceptionally();
+		}
+	}
+
+	public List<PatientDemographic> search(String partialNID) {
+
+		if (!hl7FileFuture.isDone()) {
+			throw new AppException("hl7.search.error.not.done");
+		}
+
+		File hlfF = new File(
+				Paths.get(hl7FolderName, hl7FileName + HL7_EXTENSION)
+						.toString());
+
+		try (InputStream inputStream = new BufferedInputStream(new FileInputStream(hlfF))) {
+
+			Hl7InputStreamMessageIterator iter = new Hl7InputStreamMessageIterator(inputStream);
+
+			List<PatientDemographic> demographicData = new ArrayList<>();
+
+			while (iter.hasNext()) {
+
+				Message hapiMsg = iter.next();
+
+				ADT_A24 adtMsg = (ADT_A24) hapiMsg;
+				PID pid = adtMsg.getPID();
+
+				PatientDemographic data = new PatientDemographic();
+
+				data.setPid(pid.getPatientID().getIDNumber().getValue().trim());
+				data.setGivenName(pid.getPatientName(0).getGivenName().getValue());
+				data.setMiddleName(pid.getPatientName(0).getSecondAndFurtherGivenNamesOrInitialsThereof().getValue());
+				data.setFamilyName(pid.getPatientName(0).getFamilyName().getSurname().getValue());
+				data.setBirthDate(pid.getDateTimeOfBirth().getTime().getValue());
+				data.setGender(pid.getAdministrativeSex().getValue());
+				data.setAddress(pid.getPatientAddress(0).getStreetAddress().getStreetName().getValue());
+				data.setCountryDistrict(pid.getPatientAddress(0).getCity().getValue());
+				data.setStateProvince(pid.getPatientAddress(0).getStateOrProvince().getValue());
+
+				demographicData.add(data);
+			}
+
+			List<PatientDemographic> filteredDemo = new ArrayList<>();
+
+			for (PatientDemographic data : demographicData) {
+				if (data.getPid().contains(partialNID)) {
+					filteredDemo.add(data);
+				}
+			}
+
+			return filteredDemo;
+
+		} catch (IOException e) {
+			throw new AppException("hl7.search.error", e);
+		}
+	}
+
+	private LocalDateTime getFileLastModifiedTime() {
 		try {
-
-			HL7File hl7 = new HL7File();
-
-			String filename = path.getFileName().toString();
-
-			// If processing remove '.' from start of filename
-			if (filename.startsWith(PROCESSING_PREFIX)) {
-				hl7.setFileName(filename.substring(1));
-			} else {
-				hl7.setFileName(filename);
-			}
-
-			// Get the processing status map key, which should be the
-			// filename without PROCESSING_PREFIX.
-			String key = filename;
-			if (key.startsWith(PROCESSING_PREFIX)) {
-				key = key.substring(1);
-			}
-			hl7.setProcessingStatus(processingStatus.get(key));
-
+			Path path = Paths.get(hl7FolderName, hl7FileName + HL7_EXTENSION);
 			BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
-			LocalDateTime lastModified = attrs.lastModifiedTime().toInstant().atZone(ZoneId.systemDefault())
+			return attrs.lastModifiedTime()
+					.toInstant()
+					.atZone(ZoneId.systemDefault())
 					.toLocalDateTime();
-			hl7.setLastModifiedTime(lastModified);
-			return hl7;
 		} catch (IOException e) {
 			throw new AppException("hl7.create.error", e);
-		}
-	}
-
-	private void checkIfInHL7Folder(Path path) {
-		if (!path.normalize().startsWith(Paths.get(hl7FolderName))) {
-			throw new AppException("hl7.error.folder");
 		}
 	}
 }

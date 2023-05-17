@@ -1,42 +1,18 @@
 package mz.org.fgh.hl7.model;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 
-@ToString
-@EqualsAndHashCode
+@Data
 public class HL7File {
 
-    public enum ProcessingStatus {
-        PROCESSING, FAILED, DONE;
-    }
+    private Location province;
 
-    @Getter
-    @Setter
-    @EqualsAndHashCode.Exclude
-    private ProcessingStatus processingStatus;
+    private Location district;
 
-    @Getter
-    @Setter
-    private String fileName;
+    private List<Location> healthFacilities;
 
-    @Getter
-    @Setter
     private LocalDateTime lastModifiedTime;
-
-    public boolean isProcessing() {
-        return processingStatus == ProcessingStatus.PROCESSING;
-    }
-
-    public boolean isFailed() {
-        return processingStatus == ProcessingStatus.FAILED;
-    }
-
-    public boolean isDone() {
-        return processingStatus == ProcessingStatus.DONE;
-    }
 }
