@@ -44,14 +44,14 @@ public class ApiController {
         // Format the same as in thymeleaf
         TemporalFormattingUtils fmt = new TemporalFormattingUtils(locale, ZoneId.systemDefault());
 
-        if (hl7File.isDone()) {
+        if (hl7File.isDone() && !hl7File.isCompletedExceptionally()) {
             LocalDateTime modifiedAt = hl7File.get().getLastModifiedTime();
             hl7.put("processingStatus", ProcessingStatus.DONE);
             Object[] args = new Object[] { fmt.format(modifiedAt) };
             hl7.put("message", messageSource.getMessage("hl7.file.updated.at", args, locale));
         } else if (hl7File.isCompletedExceptionally()) {
             hl7.put("processingStatus", ProcessingStatus.FAILED);
-            hl7.put("message", getFailedMessage(previousHL7File.getLastModifiedTime(), locale));
+            hl7.put("message", getFailedMessage(previousHL7File, locale));
         } else {
             hl7.put("processingStatus", ProcessingStatus.PROCESSING);
             hl7.put("message", messageSource.getMessage("hl7.files.processing", null, locale));
@@ -60,12 +60,12 @@ public class ApiController {
         return hl7;
     }
 
-    private String getFailedMessage(LocalDateTime previousModifiedTime, Locale locale) {
-        if (previousModifiedTime != null) {
-            return messageSource.getMessage("hl7.files.processing.failed", null, locale);
+    private String getFailedMessage(HL7File previousHl7File, Locale locale) {
+        if (previousHl7File == null) {
+            return messageSource.getMessage("hl7.files.processing.error", null, locale);
         } else {
             return messageSource.getMessage("hl7.files.processing.error.previous.at",
-                    new Object[] { previousModifiedTime }, locale);
+                    new Object[] { previousHl7File.getLastModifiedTime() }, locale);
         }
     }
 }
