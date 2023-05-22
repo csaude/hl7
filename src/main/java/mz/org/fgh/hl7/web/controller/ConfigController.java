@@ -1,10 +1,7 @@
 package mz.org.fgh.hl7.web.controller;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.concurrent.Future;
 
 import javax.validation.Valid;
 
@@ -13,10 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -24,70 +19,55 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ca.uhn.hl7v2.HL7Exception;
 import mz.org.fgh.hl7.AppException;
 import mz.org.fgh.hl7.model.HL7File;
+import mz.org.fgh.hl7.model.HL7FileRequest;
 import mz.org.fgh.hl7.model.Location;
-import mz.org.fgh.hl7.model.PatientDemographic;
 import mz.org.fgh.hl7.service.Hl7Service;
 import mz.org.fgh.hl7.service.LocationService;
 import mz.org.fgh.hl7.web.Alert;
 import mz.org.fgh.hl7.web.Hl7FileForm;
-import mz.org.fgh.hl7.web.SearchForm;
 
 @Controller
-@RequestMapping("/hl7")
-public class HL7Controller {
-
-    private static final Logger LOG = LoggerFactory.getLogger(HL7Controller.class);
-
+@RequestMapping("/config")
+public class ConfigController {
     private static final int ROW_SIZE = 5;
 
-    private LocationService locationService;
+    private static final Logger LOG = LoggerFactory.getLogger(ConfigController.class);
+
+    private static Hl7FileForm previousHl7FileForm;
 
     private Hl7Service hl7Service;
+    private LocationService locationService;
 
-    public HL7Controller(LocationService locationService, Hl7Service hl7Service) {
-        this.locationService = locationService;
+    public ConfigController(Hl7Service hl7Service, LocationService locationService) {
         this.hl7Service = hl7Service;
+        this.locationService = locationService;
     }
 
-    @ModelAttribute("searchAvailable")
-    public boolean isSearchAvailable() {
-        return hl7Service.isSearchAvailable();
-    }
-
-    @ModelAttribute("needsNewFile")
-    public boolean needsNewFile() {
-        return hl7Service.getHl7File() == null
-                && hl7Service.getPreviousHl7File() == null;
-    }
-
-    @ModelAttribute("previousLastModifiedTime")
-    public LocalDateTime getPreviousLastModifiedTime() {
-        HL7File previousHl7File = hl7Service.getPreviousHl7File();
-        return previousHl7File != null ? previousHl7File.getLastModifiedTime() : null;
-    }
-
-    @ModelAttribute("hl7File")
-    public Future<HL7File> getHl7File() {
-        return hl7Service.getHl7File();
-    }
-
-    @GetMapping("/config")
+    @GetMapping
     public String newHL7Form(
             Hl7FileForm hl7FileForm,
             Model model,
             RedirectAttributes redirectAttrs) {
 
         try {
+            HL7File hl7File = hl7Service.getHl7File();
+            if (hl7File != null
+                    && nullOrEquals(hl7FileForm.getProvince(), hl7File.getProvince())
+                    && nullOrEquals(hl7FileForm.getDistrict(), hl7File.getDistrict())) {
+                hl7FileForm.setProvince(hl7File.getProvince());
+                hl7FileForm.setDistrict(hl7File.getDistrict());
+                hl7FileForm.setHealthFacilities(hl7File.getHealthFacilities());
+            }
             setAllProvinces(hl7FileForm, model);
         } catch (AppException e) {
             LOG.error(e.getMessage(), e);
             redirectAttrs.addFlashAttribute(Alert.danger(e.getMessage()));
-            return "redirect:/hl7/search";
+            return "redirect:/search";
         }
         return "config";
     }
 
-    @PostMapping("/config")
+    @PostMapping
     public String createHL7(
             @Valid Hl7FileForm hl7FileForm,
             BindingResult result,
@@ -98,38 +78,16 @@ public class HL7Controller {
             return newHL7Form(hl7FileForm, model, redirectAttrs);
         }
 
-        hl7Service.generateHl7File(hl7FileForm.getHealthFacilities());
+        HL7FileRequest req = new HL7FileRequest();
+        req.setProvince(hl7FileForm.getProvince());
+        req.setDistrict(hl7FileForm.getDistrict());
+        req.setHealthFacilities(hl7FileForm.getHealthFacilities());
+        hl7Service.generateHl7File(req);
+
+        // ConfigController.previousHl7FileForm = hl7FileForm;
 
         redirectAttrs.addFlashAttribute(Alert.success("hl7.schedule.success"));
-        return "redirect:/hl7/search";
-    }
-
-    @GetMapping("/search")
-    public String search(@Valid SearchForm searchForm,
-            BindingResult bindingResult,
-            Model model) throws FileNotFoundException {
-
-        try {
-
-            if (bindingResult.hasErrors() || StringUtils.isEmpty(searchForm.getPartialNid())) {
-                return "search";
-            }
-
-            List<PatientDemographic> search = hl7Service.search(searchForm.getPartialNid());
-
-            if (search.isEmpty()) {
-                model.addAttribute("errorMessage",
-                        "Não encontramos nenhum item que corresponda à sua consulta de pesquisa.");
-            } else {
-                model.addAttribute("hl7Patients", search);
-            }
-
-        } catch (AppException e) {
-            model.addAttribute(Alert.danger(e.getMessage()));
-        }
-
-        return "search";
-
+        return "redirect:/search";
     }
 
     private void setAllProvinces(Hl7FileForm hl7FileForm, Model model) {
@@ -149,4 +107,9 @@ public class HL7Controller {
         // Divide health facility list into equal sized sublists
         model.addAttribute("partitionedHF", ListUtils.partition(healthFacilities, ROW_SIZE));
     }
+
+    private boolean nullOrEquals(Location l1, Location l2) {
+        return l1 == null || l1.equals(l2);
+    }
+
 }

@@ -26,6 +26,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import ca.uhn.hl7v2.HL7Exception;
 import mz.org.fgh.hl7.dao.Hl7FileGeneratorDao;
 import mz.org.fgh.hl7.model.HL7File;
+import mz.org.fgh.hl7.model.HL7FileRequest;
 import mz.org.fgh.hl7.model.Location;
 import mz.org.fgh.hl7.model.PatientDemographic;
 import mz.org.fgh.hl7.service.Hl7Service;
@@ -69,7 +70,7 @@ public class Hl7ServiceTest {
     @Test
     public void createShouldGenerateNewHl7File()
             throws InterruptedException, ExecutionException, HL7Exception, TimeoutException {
-        Location location = EASY_RANDOM.nextObject(Location.class);
+        Location location = new Location();
 
         PatientDemographic patientDemographics = EASY_RANDOM.nextObject(PatientDemographic.class);
 
@@ -78,7 +79,9 @@ public class Hl7ServiceTest {
 
         assertThat(hl7Exists(hl7FilePath)).isFalse();
 
-        CompletableFuture<HL7File> hl7File = hl7Service.generateHl7File(Arrays.asList(location));
+        HL7FileRequest hl7FileRequest = new HL7FileRequest();
+        hl7FileRequest.setHealthFacilities(Arrays.asList(location));
+        CompletableFuture<HL7File> hl7File = hl7Service.generateHl7File(hl7FileRequest);
 
         LocalDateTime lastModifiedTime = hl7File.get().getLastModifiedTime();
 
@@ -89,14 +92,16 @@ public class Hl7ServiceTest {
     @Test
     public void createShouldRemoveTemporaryHl7File()
             throws InterruptedException, ExecutionException, HL7Exception, TimeoutException {
-        Location location = EASY_RANDOM.nextObject(Location.class);
+        Location location = new Location();
 
         PatientDemographic patientDemographics = EASY_RANDOM.nextObject(PatientDemographic.class);
 
         when(hl7FileGeneratorDao.getPatientDemographicData(anyList()))
                 .thenReturn(Arrays.asList(patientDemographics));
 
-        CompletableFuture<HL7File> hl7File = hl7Service.generateHl7File(Arrays.asList(location));
+        HL7FileRequest hl7FileRequest = new HL7FileRequest();
+        hl7FileRequest.setHealthFacilities(Arrays.asList(location));
+        CompletableFuture<HL7File> hl7File = hl7Service.generateHl7File(hl7FileRequest);
 
         hl7File.get();
 
@@ -106,25 +111,29 @@ public class Hl7ServiceTest {
     @Test
     public void createShouldSavePreviousLastModifiedTime()
             throws InterruptedException, ExecutionException, HL7Exception, TimeoutException {
-        Location location = EASY_RANDOM.nextObject(Location.class);
+        Location location = new Location();
 
         PatientDemographic patientDemographics = EASY_RANDOM.nextObject(PatientDemographic.class);
 
+        HL7FileRequest hl7FileRequest = new HL7FileRequest();
+        hl7FileRequest.setHealthFacilities(Arrays.asList(location));
+
         when(hl7FileGeneratorDao.getPatientDemographicData(anyList()))
                 .thenReturn(Arrays.asList(patientDemographics));
-        CompletableFuture<HL7File> hl7File = hl7Service.generateHl7File(Arrays.asList(location));
+        CompletableFuture<HL7File> hl7File = hl7Service.generateHl7File(hl7FileRequest);
         LocalDateTime time1 = hl7File.get().getLastModifiedTime();
-        assertThat(hl7Service.getPreviousHl7File().getLastModifiedTime()).isEqualTo(time1);
+        assertThat(hl7Service.getHl7File().getLastModifiedTime()).isEqualTo(time1);
 
         when(hl7FileGeneratorDao.getPatientDemographicData(anyList()))
                 .thenThrow(new RuntimeException());
-        CompletableFuture<HL7File> hl7File2 = hl7Service.generateHl7File(Arrays.asList(location));
+
+        CompletableFuture<HL7File> hl7File2 = hl7Service.generateHl7File(hl7FileRequest);
         try {
             hl7File2.join();
         } catch (RuntimeException e) {
         }
 
-        assertThat(hl7Service.getPreviousHl7File().getLastModifiedTime()).isEqualTo(time1);
+        assertThat(hl7Service.getHl7File().getLastModifiedTime()).isEqualTo(time1);
     }
 
     public boolean hl7Exists(Path hl7Path) {
