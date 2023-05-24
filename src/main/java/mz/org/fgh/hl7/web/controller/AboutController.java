@@ -6,11 +6,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
-@RequestMapping("/help")
-public class HelpController {
+@RequestMapping("/about")
+public class AboutController {
 
     @GetMapping
-    public String showHelpPage(Model model) {
-        return "help";
+    public String showAboutPage(Model model) {
+        return "about";
     }
 }

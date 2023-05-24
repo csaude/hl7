@@ -2,72 +2,149 @@
 <html>
 
 <head th:replace="~{base :: common_header(~{:: title},~{}) }">
-  <title th:text="#{hl7.search.title}"></title>
+  <title th:text="#{hl7.index.title}"></title>
 </head>
 
-<body th:replace="~{base :: common_body(~{:: .content}, ~{})}">
+<body th:replace="~{base :: common_body(~{:: .content}, ~{:: script})}">
 
   <div class="content">
 
-    <nav aria-label="breadcrumb"
-      style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='%236c757d'/%3E%3C/svg%3E&#34;);">
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a th:href="@{/hl7}" th:text="#{hl7.nav.home}"></a></li>
-        <li class="breadcrumb-item active" aria-current="page" th:text="${filename}"></li>
-      </ol>
-    </nav>
+    <!--/* No content message */-->
+    <div th:if="${needsNewFile}" class="text-center">
+      <p th:text="#{hl7.files.empty}" class="fw-light"></p>
+      <a class="btn btn-primary" th:href="@{/hl7/config}" th:text="#{hl7.nav.generate}"></a>
+    </div>
 
-    <form th:object="${searchForm}" method="get" class="row row-cols-lg-auto g-3">
-      <div class="col-12">
-        <label class="visually-hidden" for="partialNid">NID</label>
-        <input type="text" th:field="*{partialNid}" th:errorclass="is-invalid" class="form-control"
-          placeholder="Nid Parcial do Paciente" aria-describedby="partialNidHelp">
-        <div th:if="${not #fields.hasErrors('partialNid')}" id="partialNidHelp" class="form-text">
-          Nid Parcial (exemplo: /2021/00001)
-        </div>
-        <div class="invalid-feedback" th:errors="*{partialNid}"></div>
-      </div>
-      <div class="col-12">
-        <button type="submit" class="btn btn-primary">Pesquisar</button>
-      </div>
-    </form>
+    <div th:if="${hl7File != null}" class="list-group">
+      <div class="list-group-item list-group-item-action gap-3 py-3" aria-current="true">
 
-    <br>
-
-    <div th:if="${errorMessage}" th:text="${errorMessage}" class="alert alert-primary" role="alert"></div>
-
-    <div th:if="${not #lists.isEmpty(hl7Patients)}">
-      <table class="table table-striped table-hover table-bordered table-sm">
-        <thead>
-          <tr>
-            <th>NID</th>
-            <th>Nome</th>
-            <th>Sobrenome</th>
-            <th>Apelido</th>
-            <th>Data de Nascimento</th>
-            <th>Sexo</th>
-            <th>Endereço</th>
-            <th>Cidade</th>
-            <th>Província</th>
-          </tr>
-        </thead>
-        <tbody>
-          <div th:each="patient : ${hl7Patients}">
-            <tr>
-              <td th:text=${patient.pid}></td>
-              <td th:text=${patient.givenName}></td>
-              <td th:text=${patient.middleName}></td>
-              <td th:text=${patient.familyName}></td>
-              <td th:text=${patient.birthDate}></td>
-              <td th:text=${patient.gender}></td>
-              <td th:text=${patient.address}></td>
-              <td th:text=${patient.countryDistrict}></td>
-              <td th:text=${patient.stateProvince}></td>
-            </tr>
+        <div class="d-flex gap-2 w-100 justify-content-between">
+          <div class="btn-group">
+            <!--/* TODO add refresh */-->
           </div>
-        </tbody>
-      </table>
+        </div>
+
+        <!--/* Processing or last modified time (Status) */-->
+
+        <small th:if="${!hl7File.isDone()}" class="opacity-75 text-nowrap" data-processing>
+          <i class="spinner-grow spinner-grow-sm" role="status"></i> <span th:text="#{hl7.files.processing}"></span>
+        </small>
+        <small th:if="${hl7File.isDone() && !hl7File.isCompletedExceptionally()}"
+          class="opacity-75 text-nowrap text-success">
+          <i class='bi bi-check'></i> <span
+            th:text="#{hl7.file.updated.at(${#temporals.format(hl7File.get().lastModifiedTime)})}"></span>
+        </small>
+        <small th:if="${hl7File.isCompletedExceptionally()}" class="opacity-75 text-nowrap text-danger">
+          <i class="bi bi-exclamation-triangle"></i>
+          <span th:if="${previousLastModifiedTime==null}" th:text="#{hl7.files.processing.error}"></span>
+          <span th:if="${previousLastModifiedTime!=null}"
+            th:text="#{hl7.files.processing.error.previous.at(${#temporals.format(previousLastModifiedTime)})}"></span>
+        </small>
+      </div>
+    </div>
+
+    <br />
+
+    <div th:if="${searchAvailable}" class="row">
+      <div class="col-12">
+        <form th:object="${searchForm}" th:action="@{/hl7/search}" method="get" class="row row-cols-lg-auto g-3">
+          <div class="col-12">
+            <label class="visually-hidden" for="partialNid">NID</label>
+            <input type="text" th:field="*{partialNid}" th:errorclass="is-invalid" class="form-control"
+              placeholder="Nid Parcial do Paciente" aria-describedby="partialNidHelp">
+            <div th:if="${not #fields.hasErrors('partialNid')}" id="partialNidHelp" class="form-text">
+              Nid Parcial (exemplo: /2021/00001)
+            </div>
+            <div class="invalid-feedback" th:errors="*{partialNid}"></div>
+          </div>
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary">Pesquisar</button>
+          </div>
+        </form>
+
+        <br>
+
+        <div th:if="${errorMessage}" th:text="${errorMessage}" class="alert alert-primary" role="alert"></div>
+
+        <div th:if="${not #lists.isEmpty(hl7Patients)}">
+          <table class="table table-striped table-hover table-bordered table-sm">
+            <thead>
+              <tr>
+                <th>NID</th>
+                <th>Nome</th>
+                <th>Sobrenome</th>
+                <th>Apelido</th>
+                <th>Data de Nascimento</th>
+                <th>Sexo</th>
+                <th>Endereço</th>
+                <th>Cidade</th>
+                <th>Província</th>
+              </tr>
+            </thead>
+            <tbody>
+              <div th:each="patient : ${hl7Patients}">
+                <tr>
+                  <td th:text=${patient.pid}></td>
+                  <td th:text=${patient.givenName}></td>
+                  <td th:text=${patient.middleName}></td>
+                  <td th:text=${patient.familyName}></td>
+                  <td th:text=${patient.birthDate}></td>
+                  <td th:text=${patient.gender}></td>
+                  <td th:text=${patient.address}></td>
+                  <td th:text=${patient.countryDistrict}></td>
+                  <td th:text=${patient.stateProvince}></td>
+                </tr>
+              </div>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
+  <script th:inline="javascript">
+
+    let timeout = null;
+
+    async function updateHl7Status() {
+      const processingFile = document.querySelectorAll("[data-processing]");
+      if (processingFile.length) {
+        const response = await fetch("/api");
+        const data = await response.json();
+
+        if (data.processingStatus === "PROCESSING") {
+          processingFile.forEach(element => {
+            element.innerHTML = `<i class="spinner-grow spinner-grow-sm" role="status"></i> <span>${data.message}</span>`;
+          });
+        } else if (data.processingStatus === "DONE") {
+          processingFile.forEach(element => {
+            element.classList.add("text-success");
+            element.innerHTML = `<i class='bi bi-check'></i> <span>${data.message}</span>`;
+          });
+        } else if (data.processingStatus === "FAILED") {
+          element.classList.add("text-danger");
+          processingFile.forEach(element => {
+            element.innerHTML = `<i class="bi bi-exclamation-triangle"></i> <span>${data.message}</span>`;
+          });
+        }
+
+        if (data.processingStatus === "DONE" || data.processingStatus === "FAILED") {
+          clearTimeout(timeout);
+        }
+
+      }
+    }
+
+    /*[- https://developer.mozilla.org/en-US/docs/Web/API/setInterval#ensure_that_execution_duration_is_shorter_than_interval_frequency -]*/
+    (function loop() {
+      timeout = setTimeout(() => {
+        updateHl7Status();
+        loop();
+      }, 5000);
+    })();
+
+  </script>
+
 </body>
+
+</html>

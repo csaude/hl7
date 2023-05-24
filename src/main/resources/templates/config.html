@@ -11,7 +11,7 @@
 
     <div class="col-lg-8">
 
-      <form action="#" th:action="@{/hl7/new}" th:object="${hl7FileForm}" method="post">
+      <form action="#" th:action="@{/hl7/config}" th:object="${hl7FileForm}" method="post">
 
         <div class="row">
 
@@ -69,27 +69,6 @@
         </div>
 
         <br/>
-
-        <div class="row">
-
-          <!--/* File name */-->
-
-          <div class="col-sm-12 col-md-6 mb-3">
-            <label for="filename" th:text="#{hl7.filename}" class="form-label"></label>
-            <div class="input-group">
-              <input type="text"
-                     th:field="*{filename}"
-                     th:class="${#fields.hasErrors('filename') ? 'form-control is-invalid': 'form-control'}"
-                     aria-describedby="filenameHelp"/>
-              <span class="input-group-text" id="basic-addon2">.hl7</span>
-              <div th:if="${#fields.hasErrors('filename')}"
-                   id="filenameHelp"
-                   th:errors="*{filename}" class="invalid-feedback"></div>
-            </div>
-          </div>
-        </div>
-
-        <br />
 
         <button
           th:type="submit"
