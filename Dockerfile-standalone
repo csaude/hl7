@@ -7,8 +7,7 @@ RUN --mount=type=cache,target=/root/.m2 ./mvnw dependency:go-offline
 COPY ./src ./src
 RUN --mount=type=cache,target=/root/.m2 ./mvnw clean install
 
-FROM eclipse-temurin:8-jre-alpine
-WORKDIR /opt/app
+FROM tomcat:8-jre8-alpine
+WORKDIR /usr/local/tomcat/webapps
 EXPOSE 8080
-COPY --from=builder /opt/app/target/*.jar /opt/app/*.jar
-ENTRYPOINT ["java", "-jar", "/opt/app/*.jar" ]
+COPY --from=builder /opt/app/target/*.war hl7.war

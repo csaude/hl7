@@ -120,7 +120,7 @@
     async function updateHl7Status() {
       const processingFile = document.querySelectorAll("[data-processing]");
       if (processingFile.length) {
-        const response = await fetch("/api");
+        const response = await fetch("api");
         const data = await response.json();
 
         if (data.processingStatus === "PROCESSING") {
