@@ -5,7 +5,7 @@ import java.util.concurrent.CompletableFuture;
 
 import ca.uhn.hl7v2.HL7Exception;
 import mz.org.fgh.hl7.model.HL7File;
-import mz.org.fgh.hl7.model.Location;
+import mz.org.fgh.hl7.model.HL7FileRequest;
 import mz.org.fgh.hl7.model.PatientDemographic;
 
 public interface Hl7Service {
@@ -14,17 +14,17 @@ public interface Hl7Service {
      * @return The generated HL7 file.
      * @throws HL7Exception
      */
-    public CompletableFuture<HL7File> generateHl7File(List<Location> locations) throws HL7Exception;
+    public CompletableFuture<HL7File> generateHl7File(HL7FileRequest fileRequest) throws HL7Exception;
 
     /**
      * @return The generated HL7 file, could be processing.
      */
-    public CompletableFuture<HL7File> getHl7File();
+    public CompletableFuture<HL7File> getHl7FileFuture();
 
     /**
-     * @return Previously HL7 file that was succesfully generated or null if none.
+     * @return The HL7 file that was succesfully generated or null if none.
      */
-    public HL7File getPreviousHl7File();
+    public HL7File getHl7File();
 
     /**
      * @return True if the search is available, false otherwise. Due to asynchronous
