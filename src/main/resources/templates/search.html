@@ -12,10 +12,10 @@
     <!--/* No content message */-->
     <div th:if="${needsNewFile}" class="text-center">
       <p th:text="#{hl7.files.empty}" class="fw-light"></p>
-      <a class="btn btn-primary" th:href="@{/hl7/config}" th:text="#{hl7.nav.generate}"></a>
+      <a class="btn btn-primary" th:href="@{/config}" th:text="#{hl7.nav.generate}"></a>
     </div>
 
-    <div th:if="${hl7File != null}" class="list-group">
+    <div th:if="${hl7FileFuture != null}" class="list-group">
       <div class="list-group-item list-group-item-action gap-3 py-3" aria-current="true">
 
         <div class="d-flex gap-2 w-100 justify-content-between">
@@ -24,21 +24,24 @@
           </div>
         </div>
 
+        <p th:text="${healthFacilities}"
+          th:class="'health-facilities' + ${healthFacilities.isEmpty() ? ' d-none' : ''}"></p>
+
         <!--/* Processing or last modified time (Status) */-->
 
-        <small th:if="${!hl7File.isDone()}" class="opacity-75 text-nowrap" data-processing>
+        <small th:if="${!hl7FileFuture.isDone()}" class="opacity-75 text-nowrap" data-processing>
           <i class="spinner-grow spinner-grow-sm" role="status"></i> <span th:text="#{hl7.files.processing}"></span>
         </small>
-        <small th:if="${hl7File.isDone() && !hl7File.isCompletedExceptionally()}"
+        <small th:if="${hl7FileFuture.isDone() && !hl7FileFuture.isCompletedExceptionally()}"
           class="opacity-75 text-nowrap text-success">
           <i class='bi bi-check'></i> <span
-            th:text="#{hl7.file.updated.at(${#temporals.format(hl7File.get().lastModifiedTime)})}"></span>
+            th:text="#{hl7.file.updated.at(${#temporals.format(hl7FileFuture.get().lastModifiedTime)})}"></span>
         </small>
-        <small th:if="${hl7File.isCompletedExceptionally()}" class="opacity-75 text-nowrap text-danger">
+        <small th:if="${hl7FileFuture.isCompletedExceptionally()}" class="opacity-75 text-nowrap text-danger">
           <i class="bi bi-exclamation-triangle"></i>
-          <span th:if="${previousLastModifiedTime==null}" th:text="#{hl7.files.processing.error}"></span>
-          <span th:if="${previousLastModifiedTime!=null}"
-            th:text="#{hl7.files.processing.error.previous.at(${#temporals.format(previousLastModifiedTime)})}"></span>
+          <span th:if="${hl7File==null}" th:text="#{hl7.files.processing.error}"></span>
+          <span th:if="${hl7File!=null}"
+            th:text="#{hl7.files.processing.error.previous.at(${#temporals.format(hl7File.lastModifiedTime)})}"></span>
         </small>
       </div>
     </div>
@@ -47,7 +50,7 @@
 
     <div th:if="${searchAvailable}" class="row">
       <div class="col-12">
-        <form th:object="${searchForm}" th:action="@{/hl7/search}" method="get" class="row row-cols-lg-auto g-3">
+        <form th:object="${searchForm}" th:action="@{/search}" method="get" class="row row-cols-lg-auto g-3">
           <div class="col-12">
             <label class="visually-hidden" for="partialNid">NID</label>
             <input type="text" th:field="*{partialNid}" th:errorclass="is-invalid" class="form-control"
@@ -106,6 +109,14 @@
 
     let timeout = null;
 
+    function updateHealthFacilities(healthFacilities) {
+      const hf = document.querySelectorAll(".health-facilities");
+      hf.forEach(element => {
+        element.innerText = healthFacilities;
+        element.classList.remove("d-none");
+      });
+    }
+
     async function updateHl7Status() {
       const processingFile = document.querySelectorAll("[data-processing]");
       if (processingFile.length) {
@@ -118,12 +129,14 @@
           });
         } else if (data.processingStatus === "DONE") {
           processingFile.forEach(element => {
+            updateHealthFacilities(data.healthFacilities);
             element.classList.add("text-success");
             element.innerHTML = `<i class='bi bi-check'></i> <span>${data.message}</span>`;
           });
         } else if (data.processingStatus === "FAILED") {
-          element.classList.add("text-danger");
           processingFile.forEach(element => {
+            updateHealthFacilities(data.healthFacilities);
+            element.classList.add("text-danger");
             element.innerHTML = `<i class="bi bi-exclamation-triangle"></i> <span>${data.message}</span>`;
           });
         }
