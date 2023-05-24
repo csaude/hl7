@@ -1,5 +1,4 @@
-FROM eclipse-temurin:8-jre-alpine
-WORKDIR /opt/app
+FROM tomcat:8-jre8-alpine
+WORKDIR /usr/local/tomcat/webapps
 EXPOSE 8080
-COPY target/*.jar /opt/app/*.jar
-ENTRYPOINT ["java", "-jar", "/opt/app/*.jar" ]
+COPY target/*.war hl7.war
