@@ -66,5 +66,4 @@ public class Hl7FileGeneratorDaoImpl implements Hl7FileGeneratorDao {
 
 		return patientDemographics;
 	}
-
 }
