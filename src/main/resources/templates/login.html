@@ -47,9 +47,9 @@
   </style>
 </head>
 
-<body class="text-center">
+<body class="text-center flex-column justify-content-center">
 
-  <main class="form-signin w-100 m-auto">
+  <main class="form-signin w-100">
     <div class="text-danger" th:if="${param.error}" th:text="#{hl7.login.error}"></div>
     <form th:action="@{/login}" method="post">
       <div class="form-floating">
@@ -65,6 +65,16 @@
       <p class="mt-5 mb-3 text-muted" th:text="${appVersion}"></p>
     </form>
   </main>
+  <section class="w-75 d-xl-none">
+    <small>Ao acessar este sistema, você está prestes a visualizar informações altamente confidenciais de utentes.
+      É sua responsabilidade protegê-las adequadamente e usá-las somente para os fins autorizados.
+      A privacidade dos utentes é essencial para nossa missão.</small>
+  </section>
+  <section class="w-50 d-none d-xl-block">
+    <small>Ao acessar este sistema, você está prestes a visualizar informações altamente confidenciais de utentes.
+      É sua responsabilidade protegê-las adequadamente e usá-las somente para os fins autorizados.
+      A privacidade dos utentes é essencial para nossa missão.</small>
+  </section>
 </body>
 
 </html>
