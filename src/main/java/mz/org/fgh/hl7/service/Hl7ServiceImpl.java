@@ -51,6 +51,8 @@ public class Hl7ServiceImpl implements Hl7Service {
 	private static final String PROCESSING_PREFIX = ".";
 
 	private static final String HL7_EXTENSION = ".hl7";
+	
+	private static final String BAK_EXTENSION = ".bak";
 
 	private static final Logger log = LoggerFactory.getLogger(Hl7ServiceImpl.class.getName());
 
@@ -203,11 +205,17 @@ public class Hl7ServiceImpl implements Hl7Service {
 			throw new AppException("hl7.search.error.not.done");
 		}
 
-		File hlfF = new File(
-				Paths.get(hl7FolderName, hl7FileName + HL7_EXTENSION)
-						.toString());
+		File hlfF = new File(Paths.get(hl7FolderName, hl7FileName + HL7_EXTENSION).toString());
+		
+		File bakF = new File(Paths.get(hl7FolderName, hl7FileName + BAK_EXTENSION).toString());
+		
+		File selectedFile = hlfF.exists() ? hlfF : bakF;
+		
+		if(!selectedFile.exists()) {
+			throw new AppException("hl7.search.error.file.not.found"); 
+		}
 
-		try (InputStream inputStream = new BufferedInputStream(new FileInputStream(hlfF))) {
+		try (InputStream inputStream = new BufferedInputStream(new FileInputStream(selectedFile))) {
 
 			Hl7InputStreamMessageIterator iter = new Hl7InputStreamMessageIterator(inputStream);
 
