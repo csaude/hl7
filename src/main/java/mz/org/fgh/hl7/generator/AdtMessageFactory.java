@@ -1,7 +1,6 @@
 package mz.org.fgh.hl7.generator;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.logging.Logger;
 
 import ca.uhn.hl7v2.HL7Exception;
