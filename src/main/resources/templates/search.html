@@ -77,25 +77,29 @@
                 <th>Nome</th>
                 <th>Sobrenome</th>
                 <th>Apelido</th>
+                <th>Data da Última Consulta</th>
                 <th>Data de Nascimento</th>
                 <th>Sexo</th>
                 <th>Endereço</th>
                 <th>Cidade</th>
                 <th>Província</th>
+                <th>US</th>
               </tr>
             </thead>
             <tbody>
               <div th:each="patient : ${hl7Patients}">
                 <tr>
-                  <td th:text=${patient.pid}></td>
-                  <td th:text=${patient.givenName}></td>
-                  <td th:text=${patient.middleName}></td>
-                  <td th:text=${patient.familyName}></td>
-                  <td th:text=${patient.birthDate}></td>
-                  <td th:text=${patient.gender}></td>
-                  <td th:text=${patient.address}></td>
-                  <td th:text=${patient.countryDistrict}></td>
-                  <td th:text=${patient.stateProvince}></td>
+                  <td th:text="${patient.pid}"></td>
+                  <td th:text="${patient.givenName}"></td>
+                  <td th:text="${patient.middleName}"></td>
+                  <td th:text="${patient.familyName}"></td>
+                  <td th:text="${#temporals.format(patient.lastConsultationDate, 'yyyy-MM-dd')}"></td>
+                  <td th:text="${patient.birthDate}"></td>
+                  <td th:text="${patient.gender}"></td>
+                  <td th:text="${patient.address}"></td>
+                  <td th:text="${patient.countyDistrict}"></td>
+                  <td th:text="${patient.stateProvince}"></td>
+                  <td th:text="${patient.locationName}"></td>
                 </tr>
               </div>
             </tbody>

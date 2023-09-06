@@ -13,6 +13,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -29,11 +30,14 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ca.uhn.hl7v2.HL7Exception;
+import ca.uhn.hl7v2.model.DataTypeException;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.v251.message.ADT_A24;
 import ca.uhn.hl7v2.model.v251.segment.PID;
+import ca.uhn.hl7v2.model.v251.segment.PV1;
 import ca.uhn.hl7v2.parser.PipeParser;
 import ca.uhn.hl7v2.util.Hl7InputStreamMessageIterator;
+import lombok.extern.log4j.Log4j2;
 import mz.org.fgh.hl7.AppException;
 import mz.org.fgh.hl7.dao.Hl7FileGeneratorDao;
 import mz.org.fgh.hl7.generator.AdtMessageFactory;
@@ -44,6 +48,7 @@ import mz.org.fgh.hl7.model.PatientDemographic;
 import mz.org.fgh.hl7.util.Util;
 
 @Service
+@Log4j2
 public class Hl7ServiceImpl implements Hl7Service {
 
 	private static final String METADATA_JSON = ".metadata.json";
@@ -51,7 +56,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 	private static final String PROCESSING_PREFIX = ".";
 
 	private static final String HL7_EXTENSION = ".hl7";
-	
+
 	private static final String BAK_EXTENSION = ".bak";
 
 	private static final Logger log = LoggerFactory.getLogger(Hl7ServiceImpl.class.getName());
@@ -169,7 +174,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 			// Set this as the previous successfuly generated HL7 file
 			previousHl7File = hl7File;
 
-		} catch (IOException | HL7Exception e) {
+		} catch (IOException | HL7Exception | RuntimeException e) {
 
 			log.error("Error creating hl7", e);
 
@@ -206,13 +211,13 @@ public class Hl7ServiceImpl implements Hl7Service {
 		}
 
 		File hlfF = new File(Paths.get(hl7FolderName, hl7FileName + HL7_EXTENSION).toString());
-		
+
 		File bakF = new File(Paths.get(hl7FolderName, hl7FileName + BAK_EXTENSION).toString());
-		
+
 		File selectedFile = hlfF.exists() ? hlfF : bakF;
-		
-		if(!selectedFile.exists()) {
-			throw new AppException("hl7.search.error.file.not.found"); 
+
+		if (!selectedFile.exists()) {
+			throw new AppException("hl7.search.error.file.not.found");
 		}
 
 		try (InputStream inputStream = new BufferedInputStream(new FileInputStream(selectedFile))) {
@@ -227,6 +232,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 
 				ADT_A24 adtMsg = (ADT_A24) hapiMsg;
 				PID pid = adtMsg.getPID();
+				PV1 pv1 = adtMsg.getPV1();
 
 				PatientDemographic data = new PatientDemographic();
 
@@ -234,11 +240,13 @@ public class Hl7ServiceImpl implements Hl7Service {
 				data.setGivenName(pid.getPatientName(0).getGivenName().getValue());
 				data.setMiddleName(pid.getPatientName(0).getSecondAndFurtherGivenNamesOrInitialsThereof().getValue());
 				data.setFamilyName(pid.getPatientName(0).getFamilyName().getSurname().getValue());
+				setLastConsultationDate(pv1, data);
 				data.setBirthDate(pid.getDateTimeOfBirth().getTime().getValue());
 				data.setGender(pid.getAdministrativeSex().getValue());
 				data.setAddress(pid.getPatientAddress(0).getStreetAddress().getStreetName().getValue());
-				data.setCountryDistrict(pid.getPatientAddress(0).getCity().getValue());
+				data.setCountyDistrict(pid.getPatientAddress(0).getCity().getValue());
 				data.setStateProvince(pid.getPatientAddress(0).getStateOrProvince().getValue());
+				setLocationName(adtMsg, data);
 
 				demographicData.add(data);
 			}
@@ -255,6 +263,25 @@ public class Hl7ServiceImpl implements Hl7Service {
 
 		} catch (IOException e) {
 			throw new AppException("hl7.search.error", e);
+		}
+	}
+
+	private void setLastConsultationDate(PV1 pv1, PatientDemographic data) {
+		try {
+			Date date = pv1.getAdmitDateTime().getTime().getValueAsDate();
+			if (date != null) {
+				data.setLastConsultationDate(date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+			}
+		} catch (DataTypeException e) {
+			log.debug("Could not set last consultation date", e);
+		}
+	}
+
+	private void setLocationName(ADT_A24 adtMsg, PatientDemographic data) {
+		try {
+			data.setLocationName(adtMsg.getMSH().getSendingFacility().encode());
+		} catch (HL7Exception e) {
+			log.debug("Could not encode sendingFacility", e);
 		}
 	}
 
