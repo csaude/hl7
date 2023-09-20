@@ -1,8 +1,9 @@
 package mz.org.fgh.hl7.generator;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.logging.Logger;
 
 import ca.uhn.hl7v2.HL7Exception;
@@ -35,13 +36,14 @@ public class OurAdtA04MessageBuilder {
 		return _adtMessage;
 	}
 
-	private void createMshSegment(String currentDateTimeString, PatientDemographic demographic) throws DataTypeException {
+	private void createMshSegment(String currentDateTimeString, PatientDemographic demographic)
+			throws DataTypeException {
 		MSH mshSegment = _adtMessage.getMSH();
 		mshSegment.getFieldSeparator().setValue("|");
 		mshSegment.getEncodingCharacters().setValue("^~\\&");
 		mshSegment.getSendingApplication().getNamespaceID().setValue("XYZSYS");
 		mshSegment.getSendingFacility().getNamespaceID()
-		        .setValue("XYZ " + "Default Location");
+				.setValue(demographic.getLocationName());
 		mshSegment.getReceivingApplication().getNamespaceID().setValue("DISA*LAB");
 		mshSegment.getReceivingFacility().getNamespaceID().setValue("***");
 		mshSegment.getDateTimeOfMessage().getTime().setValue(currentDateTimeString);
@@ -61,7 +63,7 @@ public class OurAdtA04MessageBuilder {
 		pid.getMaritalStatus().getText().setValue(demographic.getMaritalStatus());
 		XAD patientAddress = pid.getPatientAddress(0);
 		patientAddress.getStreetAddress().getStreetName().setValue(demographic.getAddress());
-		patientAddress.getCity().setValue(demographic.getCountryDistrict());
+		patientAddress.getCity().setValue(demographic.getCountyDistrict());
 		patientAddress.getStateOrProvince().setValue(demographic.getStateProvince());
 		patientAddress.getCountry().setValue(demographic.getCountry());
 	}
@@ -71,9 +73,12 @@ public class OurAdtA04MessageBuilder {
 		pv1.getSetIDPV1().setValue("1");
 		pv1.getPatientClass().setValue("O");
 		pv1.getAssignedPatientLocation().getPl9_LocationDescription()
-		        .setValue("Default Location");
+				.setValue("Default Location");
 		pv1.getAdmissionType().setValue("R");
-		pv1.getAdmitDateTime().getTime().setValue("");
+		if (demographic.getLastConsultationDate() != null) {
+			Instant instant = demographic.getLastConsultationDate().atZone(ZoneId.systemDefault()).toInstant();
+			pv1.getAdmitDateTime().getTime().setValue(Date.from(instant));
+		}
 	}
 
 	private String getSequenceNumber() {
