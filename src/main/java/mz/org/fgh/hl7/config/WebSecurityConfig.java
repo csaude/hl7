@@ -47,13 +47,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.sessionManagement()
-                .maximumSessions(1);
+        http.sessionManagement(management -> management
+                .maximumSessions(1)
+                .expiredUrl("/login?expired"));
 
-        http.authorizeRequests()
-                .antMatchers("/webjars/**").permitAll()
-                .anyRequest().authenticated()
-                .and()
+        http.authorizeRequests(requests -> requests
+                .antMatchers("/webjars/**", "/login").permitAll()
+                .anyRequest().authenticated())
                 .formLogin(form -> form
                         .loginPage("/login")
                         .defaultSuccessUrl("/", true)
