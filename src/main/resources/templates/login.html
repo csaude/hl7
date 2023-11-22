@@ -51,6 +51,7 @@
 
   <main class="form-signin w-100">
     <div class="text-danger" th:if="${param.error}" th:text="#{hl7.login.error}"></div>
+    <div class="text-danger" th:if="${param.expired}" th:text="#{hl7.sesion.expired.error}"></div>
     <form th:action="@{/login}" method="post">
       <div class="form-floating">
         <input id="username" name="username" type="text" class="form-control" placeholder="Utilizador">
