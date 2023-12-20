@@ -11,7 +11,11 @@
 	</parent>
 	<groupId>mz.org.fgh</groupId>
 	<artifactId>hl7</artifactId>
+<<<<<<< HEAD
 	<version>1.1.1-SNAPSHOT</version>
+=======
+	<version>1.1.1</version>
+>>>>>>> dd4fb6da6bc5d8e0de461338d64559f21e7d22d3
 	<name>hl7</name>
 	<description>Reproduce hl7 files from epts central server</description>
 	<packaging>war</packaging>
