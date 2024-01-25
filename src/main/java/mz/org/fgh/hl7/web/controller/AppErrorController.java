@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-
 @Controller
 public class AppErrorController implements ErrorController {
 
@@ -33,10 +32,5 @@ public class AppErrorController implements ErrorController {
         }
         return "error";
     }
-
-	@Override
-	public String getErrorPath() {
-		return "/error";
-	}
 
 }
