@@ -1,8 +1,15 @@
-import React, { useRef, useState } from "react";
+import PropTypes from "prop-types";
+import React, { useState } from "react";
 import Form from "react-bootstrap/Form";
 import Spinner from "react-bootstrap/Spinner";
 import { useWizard } from "react-use-wizard";
 import { fetchConfiguration } from "../api";
+
+WebappFolderStep.propTypes = {
+  folder: PropTypes.string.isRequired,
+  onFolderChange: PropTypes.func.isRequired,
+  onConfigurationChange: PropTypes.func.isRequired,
+};
 
 export default function WebappFolderStep({
   folder,

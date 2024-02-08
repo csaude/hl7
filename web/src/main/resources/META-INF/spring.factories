@@ -1,0 +1,2 @@
+org.springframework.boot.env.EnvironmentPostProcessor=mz.org.fgh.hl7.web.env.EncryptedEnvironmentPostProcessor
+

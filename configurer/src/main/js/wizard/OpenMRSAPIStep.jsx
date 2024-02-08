@@ -1,14 +1,19 @@
+import PropTypes from "prop-types";
 import React, { useRef, useState } from "react";
 import Form from "react-bootstrap/Form";
 import { useWizard } from "react-use-wizard";
 import PasswordFormControl from "../PasswordFormControl";
+
+OpenMRSAPIStep.propTypes = {
+  configuration: PropTypes.object,
+  onConfigurationChange: PropTypes.func,
+};
 
 export default function OpenMRSAPIStep({
   configuration,
   onConfigurationChange,
 }) {
   const [validated, setValidated] = useState(false);
-  const [hidden, setHidden] = useState(true);
   const { handleStep, nextStep } = useWizard();
   const formRef = useRef(null);
 
@@ -22,7 +27,6 @@ export default function OpenMRSAPIStep({
 
   function handleConfigurationChange(event) {
     onConfigurationChange({
-      ...configuration,
       [event.target.name]: event.target.value,
     });
   }
