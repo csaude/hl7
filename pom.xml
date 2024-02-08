@@ -18,5 +18,6 @@
 	<modules>
 		<module>configurer</module>
 		<module>web</module>
+		<module>lib</module>
 	</modules>
 </project>

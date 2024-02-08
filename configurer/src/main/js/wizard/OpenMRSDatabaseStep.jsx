@@ -2,6 +2,12 @@ import React, { useRef, useState } from "react";
 import Form from "react-bootstrap/Form";
 import { useWizard } from "react-use-wizard";
 import PasswordFormControl from "../PasswordFormControl";
+import PropTypes from "prop-types";
+
+OpenMRSDatabaseStep.propTypes = {
+  configuration: PropTypes.object,
+  onConfigurationChange: PropTypes.func,
+};
 
 export default function OpenMRSDatabaseStep({
   configuration,
@@ -21,7 +27,6 @@ export default function OpenMRSDatabaseStep({
 
   function handleConfigurationChange(event) {
     onConfigurationChange({
-      ...configuration,
       [event.target.name]: event.target.value,
     });
   }

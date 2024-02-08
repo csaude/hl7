@@ -30,6 +30,13 @@ export default function App() {
     doFetch();
   }, []);
 
+  function handleConfigurationChange(newValues) {
+    setConfiguration({
+      ...configuration,
+      ...newValues,
+    });
+  }
+
   return (
     <div className="wizard">
       {loading ? (
@@ -42,7 +49,7 @@ export default function App() {
               folder={folder}
               configuration={configuration}
               onFolderChange={setFolder}
-              onConfigurationChange={setConfiguration}
+              onConfigurationChange={handleConfigurationChange}
             />
           ))}
         </Wizard>
