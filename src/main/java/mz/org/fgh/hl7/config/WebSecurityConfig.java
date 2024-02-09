@@ -45,7 +45,7 @@ public class WebSecurityConfig {
                 .expiredUrl("/login?expired"));
 
         http.authorizeRequests(requests -> requests
-                .antMatchers("/webjars/**", "/login", "/images/**").permitAll()
+                .antMatchers("/webjars/**", "/login", "/images/**", "/*.ico").permitAll()
                 .anyRequest().authenticated())
                 .formLogin(form -> form
                         .loginPage("/login")
