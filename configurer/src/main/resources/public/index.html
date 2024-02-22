@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuração da ferramenta HL7</title>
+  <style>
+    html,
+    body,
+    #root {
+      margin: 0;
+      height: 100%;
+    }
+
+    #root {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .wizard {
+      display: flex;
+      flex-direction: column;
+      width: 560px;
+      border: 1px solid lightgrey;
+      border-radius: 5px;
+      box-shadow: lightgrey 2px 2px;
+    }
+
+    .wizard form {
+      border-top: 1px solid lightgrey;
+      border-bottom: 1px solid lightgrey;
+      min-height: 304px;
+      padding: 10px;
+    }
+
+    .wizard-header {
+      display: flex;
+      justify-content: space-evenly;
+      margin: 10px 0;
+      padding: 10px 0;
+      color: lightgrey;
+    }
+
+    .wizard-header .active {
+      color: black;
+      font-weight: bold;
+    }
+
+    .wizard-footer {
+      display: flex;
+      justify-content: end;
+      padding: 10px;
+    }
+
+    .wizard-success {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="root"></div>
+
+  <script src="built/bundle.js"></script>
+
+</body>
+
+</html>
