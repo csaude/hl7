@@ -62,7 +62,8 @@ public class SearchController {
         return Location.joinLocations(hl7File.getHealthFacilities());
     }
 
-    @GetMapping
+    @SuppressWarnings("deprecation")
+	@GetMapping
     public String search(@Valid SearchForm searchForm,
             BindingResult bindingResult,
             Model model) throws FileNotFoundException {
