@@ -64,9 +64,6 @@ public class Hl7ServiceImpl implements Hl7Service {
 	private static final String HL7_EXTENSION = ".hl7.enc";
 
 	private static final String BAK_EXTENSION = ".bak";
-	
-	//TODO should be collected from somewhere safe
-	private static final String PASSPHRASE = "D1s@l1nKF1l3Encrypt10n";
 
 	private static final Logger log = LoggerFactory.getLogger(Hl7ServiceImpl.class.getName());
 
@@ -81,6 +78,9 @@ public class Hl7ServiceImpl implements Hl7Service {
 	private String hl7FolderName;
 
 	private String hl7FileName;
+	
+	@Value("${hl7.passPhrase}")
+	private String passPhrase;
 
 	public Hl7ServiceImpl(Hl7FileGeneratorDao hl7FileGeneratorDao, ObjectMapper objectMapper,
 			@Value("${app.hl7.folder}") String hl7FolderName, @Value("${app.hl7.filename}") String fileName) {
@@ -227,7 +227,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 			throw new AppException("hl7.search.error.file.not.found");
 		}
 
-		try (InputStream inputStream = encryptionService.desincrypt(selectedFile.toPath(), PASSPHRASE)) {
+		try (InputStream inputStream = encryptionService.desincrypt(selectedFile.toPath(), passPhrase)) {
 
 			Hl7InputStreamMessageIterator iter = new Hl7InputStreamMessageIterator(inputStream);
 
@@ -339,7 +339,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 			String doneFileName = processingfileName.split("\\.")[1];
 			Path donePath = filePath.resolveSibling(doneFileName + HL7_EXTENSION);
 			
-			encryptionService.encrypt(byteArrayOutputStream, PASSPHRASE, donePath); 
+			encryptionService.encrypt(byteArrayOutputStream, passPhrase, donePath); 
 
 			log.info("Message serialized to file {} successfully", donePath);
 		}
