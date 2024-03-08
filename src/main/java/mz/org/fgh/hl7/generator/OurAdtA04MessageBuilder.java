@@ -15,7 +15,7 @@ import ca.uhn.hl7v2.model.v251.segment.MSH;
 import ca.uhn.hl7v2.model.v251.segment.PID;
 import ca.uhn.hl7v2.model.v251.segment.PV1;
 import mz.org.fgh.hl7.model.PatientDemographic;
-import mz.org.fgh.hl7.util.Util;
+import mz.org.fgh.hl7.util.Hl7Util;
 
 /**
  * @author machabane
@@ -27,7 +27,7 @@ public class OurAdtA04MessageBuilder {
 	private ADT_A24 _adtMessage;
 
 	public ADT_A24 Build(PatientDemographic demographic) throws HL7Exception, IOException {
-		String currentDateTimeString = Util.getCurrentTimeStamp();
+		String currentDateTimeString = Hl7Util.getCurrentTimeStamp();
 		_adtMessage = new ADT_A24();
 		_adtMessage.initQuickstart("ADT", "A24", "P");
 		createMshSegment(currentDateTimeString, demographic);
@@ -83,6 +83,6 @@ public class OurAdtA04MessageBuilder {
 
 	private String getSequenceNumber() {
 		String facilityNumberPrefix = "Location ID";
-		return facilityNumberPrefix.concat(Util.getCurrentTimeStamp());
+		return facilityNumberPrefix.concat(Hl7Util.getCurrentTimeStamp());
 	}
 }
