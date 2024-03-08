@@ -1,15 +1,16 @@
 package mz.org.fgh.hl7.service;
 
-import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -20,9 +21,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -37,7 +42,6 @@ import ca.uhn.hl7v2.model.v251.segment.PID;
 import ca.uhn.hl7v2.model.v251.segment.PV1;
 import ca.uhn.hl7v2.parser.PipeParser;
 import ca.uhn.hl7v2.util.Hl7InputStreamMessageIterator;
-import lombok.extern.log4j.Log4j2;
 import mz.org.fgh.hl7.AppException;
 import mz.org.fgh.hl7.dao.Hl7FileGeneratorDao;
 import mz.org.fgh.hl7.generator.AdtMessageFactory;
@@ -45,19 +49,24 @@ import mz.org.fgh.hl7.model.HL7File;
 import mz.org.fgh.hl7.model.HL7FileRequest;
 import mz.org.fgh.hl7.model.Location;
 import mz.org.fgh.hl7.model.PatientDemographic;
-import mz.org.fgh.hl7.util.Util;
+import mz.org.fgh.hl7.util.Hl7Util;
 
 @Service
-@Log4j2
 public class Hl7ServiceImpl implements Hl7Service {
+
+	@Autowired
+	private HL7EncryptionService encryptionService;
 
 	private static final String METADATA_JSON = ".metadata.json";
 
 	private static final String PROCESSING_PREFIX = ".";
 
-	private static final String HL7_EXTENSION = ".hl7";
+	private static final String HL7_EXTENSION = ".hl7.enc";
 
 	private static final String BAK_EXTENSION = ".bak";
+	
+	//TODO should be collected from somewhere safe
+	private static final String PASSPHRASE = "D1s@l1nKF1l3Encrypt10n";
 
 	private static final Logger log = LoggerFactory.getLogger(Hl7ServiceImpl.class.getName());
 
@@ -73,11 +82,8 @@ public class Hl7ServiceImpl implements Hl7Service {
 
 	private String hl7FileName;
 
-	public Hl7ServiceImpl(
-			Hl7FileGeneratorDao hl7FileGeneratorDao,
-			ObjectMapper objectMapper,
-			@Value("${app.hl7.folder}") String hl7FolderName,
-			@Value("${app.hl7.filename}") String fileName) {
+	public Hl7ServiceImpl(Hl7FileGeneratorDao hl7FileGeneratorDao, ObjectMapper objectMapper,
+			@Value("${app.hl7.folder}") String hl7FolderName, @Value("${app.hl7.filename}") String fileName) {
 		this.objectMapper = objectMapper;
 		this.hl7FileGeneratorDao = hl7FileGeneratorDao;
 		this.hl7FolderName = hl7FolderName;
@@ -149,8 +155,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 					"Previous HL7 file generation is not yet done. Cancel it if you want to start a new one.");
 		}
 
-		Path processing = Paths.get(hl7FolderName)
-				.resolve(PROCESSING_PREFIX + hl7FileName + HL7_EXTENSION);
+		Path processing = Paths.get(hl7FolderName).resolve(PROCESSING_PREFIX + hl7FileName + HL7_EXTENSION);
 
 		try {
 
@@ -174,7 +179,9 @@ public class Hl7ServiceImpl implements Hl7Service {
 			// Set this as the previous successfuly generated HL7 file
 			previousHl7File = hl7File;
 
-		} catch (IOException | HL7Exception | RuntimeException e) {
+		} catch (IOException | HL7Exception | RuntimeException | 
+				InvalidKeyException | NoSuchPaddingException | NoSuchAlgorithmException |
+				InvalidAlgorithmParameterException | BadPaddingException | IllegalBlockSizeException e) {
 
 			log.error("Error creating hl7", e);
 
@@ -220,7 +227,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 			throw new AppException("hl7.search.error.file.not.found");
 		}
 
-		try (InputStream inputStream = new BufferedInputStream(new FileInputStream(selectedFile))) {
+		try (InputStream inputStream = encryptionService.desincrypt(selectedFile.toPath(), PASSPHRASE)) {
 
 			Hl7InputStreamMessageIterator iter = new Hl7InputStreamMessageIterator(inputStream);
 
@@ -285,16 +292,17 @@ public class Hl7ServiceImpl implements Hl7Service {
 		}
 	}
 
-	private void createHl7File(HL7FileRequest hl7FileRequest, Path filePath) throws IOException, HL7Exception {
+	private void createHl7File(HL7FileRequest hl7FileRequest, Path filePath)
+			throws IOException, HL7Exception, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException,
+			InvalidAlgorithmParameterException, BadPaddingException, IllegalBlockSizeException {
 		log.info("createHl7File called...");
 
 		Files.createFile(filePath);
 
-		List<String> locationsByUuid = hl7FileRequest.getHealthFacilities().stream()
-				.map(Location::getUuid)
+		List<String> locationsByUuid = hl7FileRequest.getHealthFacilities().stream().map(Location::getUuid)
 				.collect(Collectors.toList());
 
-		String currentTimeStamp = Util.getCurrentTimeStamp();
+		String currentTimeStamp = Hl7Util.getCurrentTimeStamp();
 
 		// prepare the headers
 		String headers = "FHS|^~\\&|XYZSYS|XYZ " + "DEFAULT_LOCATION_NAME" + "|DISA*LAB|SGP|" + currentTimeStamp
@@ -303,39 +311,35 @@ public class Hl7ServiceImpl implements Hl7Service {
 
 		// create and write the HL7 message to file
 		log.info("Fetching patient demographics.");
-		List<PatientDemographic> patientDemographics = hl7FileGeneratorDao
-				.getPatientDemographicData(locationsByUuid);
+		List<PatientDemographic> patientDemographics = hl7FileGeneratorDao.getPatientDemographicData(locationsByUuid);
 		PipeParser pipeParser = new PipeParser();
 		pipeParser.getParserConfiguration();
 		log.info("Done fetching patient demographics.");
 
-		// serialize the message to pipe delimited output file
-		try (OutputStream outputStream = Files.newOutputStream(filePath)) {
+		try(ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
 
-			log.info("Serializing message to file...");
+			log.info("Serializing message...");
 
-			outputStream.write(headers.getBytes());
-
+			byteArrayOutputStream.write(headers.getBytes()); 
+			
+			// we encrypt patient at a time
 			for (PatientDemographic patient : patientDemographics) {
 				ADT_A24 adtMessage = AdtMessageFactory.createMessage("A24", patient);
-				outputStream.write(pipeParser.encode(adtMessage).getBytes());
-				outputStream.write(System.getProperty("line.separator").getBytes());
-				outputStream.flush();
+				byteArrayOutputStream.write(pipeParser.encode(adtMessage).getBytes());
+				byteArrayOutputStream.write(System.getProperty("line.separator").getBytes());
+				byteArrayOutputStream.flush();
 			}
 
 			String footers = "BTS|" + String.valueOf(patientDemographics.size()) + "\rFTS|1";
 
-			outputStream.write(footers.getBytes());
+			byteArrayOutputStream.write(footers.getBytes());
 
 			// Remove the dot from file name to mark as done processing
 			String processingfileName = filePath.getFileName().toString();
 			String doneFileName = processingfileName.split("\\.")[1];
 			Path donePath = filePath.resolveSibling(doneFileName + HL7_EXTENSION);
-			// Remove previous processed file before renaming
-			if (Files.exists(donePath)) {
-				Files.delete(donePath);
-			}
-			Files.move(filePath, donePath);
+			
+			encryptionService.encrypt(byteArrayOutputStream, PASSPHRASE, donePath); 
 
 			log.info("Message serialized to file {} successfully", donePath);
 		}
@@ -345,10 +349,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 		try {
 			Path path = Paths.get(hl7FolderName, hl7FileName + HL7_EXTENSION);
 			BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
-			return attrs.lastModifiedTime()
-					.toInstant()
-					.atZone(ZoneId.systemDefault())
-					.toLocalDateTime();
+			return attrs.lastModifiedTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
 		} catch (IOException e) {
 			throw new AppException("hl7.create.error", e);
 		}
