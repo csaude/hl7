@@ -17,6 +17,7 @@ PasswordFormControl.propTypes = {
 export default function PasswordFormControl({
   id,
   name,
+  label,
   value,
   error,
   onChange,
@@ -60,7 +61,7 @@ export default function PasswordFormControl({
         👁
       </Button>
       <Form.Control.Feedback type="invalid">
-        {error?.message || "Por favor insira a senha."}
+        {error?.message || `Por favor insira a ${label ? label : "senha"}.`}
       </Form.Control.Feedback>
     </InputGroup>
   );

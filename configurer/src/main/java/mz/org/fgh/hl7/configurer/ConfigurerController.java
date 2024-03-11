@@ -88,6 +88,13 @@ public class ConfigurerController {
                     keyStorePassword.toCharArray());
             KeyStore.SecretKeyEntry secretKeyEntry = (KeyStore.SecretKeyEntry) keyStore
                     .getEntry(DISA_SECRET_KEY_ALIAS, protectionParam);
+
+            // If configuring the app for the first time, the secret key might not be
+            // available, so we'll return an empty string.
+            if (secretKeyEntry == null) {
+                return ResponseEntity.ok(Collections.singletonMap(DISA_SECRET_KEY_ALIAS, ""));
+            }
+
             SecretKey secretKey = secretKeyEntry.getSecretKey();
             Map<String, String> map = Collections.singletonMap(DISA_SECRET_KEY_ALIAS,
                     new String(secretKey.getEncoded()));

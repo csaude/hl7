@@ -69,7 +69,7 @@ public class SearchController {
 
         try {
 
-            if (bindingResult.hasErrors() || StringUtils.isEmpty(searchForm.getPartialNid())) {
+            if (bindingResult.hasErrors() || ObjectUtils.isEmpty(searchForm.getPartialNid())) {
                 return "search";
             }
 
