@@ -50,7 +50,7 @@ async function fetchKeyStore(keyStorePath, keyStorePassword) {
     );
   }
   if (response.status === 404) {
-    throw new Error("Não foi encontrada a key store.");
+    throw new Error("A key store não foi encontrada.");
   }
   if (response.status != 200) {
     throw new Error("Não foi possível carregar a key store.");

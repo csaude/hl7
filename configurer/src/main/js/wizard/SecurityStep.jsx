@@ -70,7 +70,7 @@ export default function SecurityStep({ configuration, onConfigurationChange }) {
     } catch (error) {
       if (error instanceof AuthenticationError) {
         err.keyStorePassword = error;
-      } else if (error instanceof AuthorizationError) {
+      } else {
         err.keyStorePath = error;
       }
       setErrors(err);
@@ -102,6 +102,11 @@ export default function SecurityStep({ configuration, onConfigurationChange }) {
           required
           autoComplete="new-password"
         />
+        {!errors.keyStorePath?.message && (
+          <Form.Text id="passwordHelpBlock" muted>
+            ⓘ Caminho para o fichiero keystore
+          </Form.Text>
+        )}
         <Form.Control.Feedback type="invalid">
           {errors.keyStorePath?.message ||
             "Por favor insira o caminho para o ficheiro key store."}
@@ -125,6 +130,7 @@ export default function SecurityStep({ configuration, onConfigurationChange }) {
         <PasswordFormControl
           id="disaSecretKey"
           name="disaSecretKey"
+          label="DISA secret key"
           value={configuration.disaSecretKey}
           onChange={handleConfigurationChange}
           required

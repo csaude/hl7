@@ -54,7 +54,7 @@ export default function OpenMRSAPIStep({
           required
         />
         <Form.Text id="passwordHelpBlock" muted>
-          Ex. http://127.0.0.1:8080/openmrs
+          ⓘ Ex. http://127.0.0.1:8080/openmrs
         </Form.Text>
         <Form.Control.Feedback type="invalid">
           Por favor insira a URL.
