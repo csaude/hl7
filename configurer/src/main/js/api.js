@@ -11,10 +11,59 @@ class ValidationError extends Error {
   }
 }
 
-async function fetchConfiguration(folder) {
-  const response = await fetch(`/configuration?folder=${folder}`);
+class AuthenticationError extends Error {
+  constructor(...params) {
+    super(...params);
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, AuthenticationError);
+    }
+
+    this.name = "AuthenticationError";
+  }
+}
+
+class AuthorizationError extends Error {
+  constructor(...params) {
+    super(...params);
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, AuthorizationError);
+    }
+
+    this.name = "AuthorizationError";
+  }
+}
+
+async function fetchKeyStore(keyStorePath, keyStorePassword) {
+  const response = await fetch(
+    `/key-store?keyStorePath=${encodeURIComponent(
+      keyStorePath
+    )}&keyStorePassword=${encodeURIComponent(keyStorePassword)}`
+  );
+  if (response.status === 401) {
+    throw new AuthenticationError("Password incorrecta.");
+  }
   if (response.status === 403) {
-    throw new Error(
+    throw new AuthorizationError(
+      "Não tem permissões suficentes para abrir a key store."
+    );
+  }
+  if (response.status === 404) {
+    throw new Error("Não foi encontrada a key store.");
+  }
+  if (response.status != 200) {
+    throw new Error("Não foi possível carregar a key store.");
+  }
+  return response.json();
+}
+
+async function fetchConfiguration(folder) {
+  const response = await fetch(
+    `/configuration?folder=${encodeURIComponent(folder)}`
+  );
+  if (response.status === 403) {
+    throw new AuthorizationError(
       "Não tem permissões suficentes para abrir o ficheiro de configuração."
     );
   }
@@ -38,13 +87,16 @@ async function fetchWebappFolder() {
 }
 
 async function saveConfiguration(folder, configuration) {
-  const response = await fetch(`/configuration?folder=${folder}`, {
-    headers: {
-      "Content-Type": "application/json",
-    },
-    method: "POST",
-    body: JSON.stringify(configuration),
-  });
+  const response = await fetch(
+    `/configuration?folder=${encodeURIComponent(folder)}`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+      body: JSON.stringify(configuration),
+    }
+  );
 
   if (response.status === 400) {
     const data = await response.json();
@@ -61,8 +113,11 @@ async function saveConfiguration(folder, configuration) {
   }
 }
 export {
+  AuthenticationError,
+  AuthorizationError,
+  ValidationError,
   fetchConfiguration,
+  fetchKeyStore,
   fetchWebappFolder,
   saveConfiguration,
-  ValidationError,
 };

@@ -1,9 +1,16 @@
+import PropTypes from "prop-types";
 import React, { useRef, useState } from "react";
 import Alert from "react-bootstrap/Alert";
 import Form from "react-bootstrap/Form";
 import { useWizard } from "react-use-wizard";
-import { ValidationError, saveConfiguration } from "../api";
 import PasswordFormControl from "../PasswordFormControl";
+import { ValidationError, saveConfiguration } from "../api";
+
+WebappAuthenticationStep.propTypes = {
+  folder: PropTypes.string.isRequired,
+  configuration: PropTypes.object,
+  onConfigurationChange: PropTypes.func,
+};
 
 export default function WebappAuthenticationStep({
   folder,
@@ -17,7 +24,6 @@ export default function WebappAuthenticationStep({
 
   function handleConfigurationChange(event) {
     onConfigurationChange({
-      ...configuration,
       [event.target.name]: event.target.value,
     });
   }
