@@ -2,7 +2,7 @@
 Extract patient demographic data from epts central server in HL7 format.
 
 ## Project structure
-This a maven project composed of two modules: configurer and web.
+This is a maven project composed of two modules: configurer and web.
 The configurer allows admins to set encrypted configuration properties used by the web app.
 The web app is the interface for lab technicians to extract and search through patient demographic data.
 
