@@ -52,7 +52,7 @@ public class Hl7ServiceTest {
 
     @BeforeEach
     public void beforeEach() {
-        hl7FilePath = Paths.get(hl7FolderName, hl7FileName + ".hl7");
+        hl7FilePath = Paths.get(hl7FolderName, hl7FileName + ".hl7.enc");
     }
 
     @AfterEach
@@ -60,7 +60,7 @@ public class Hl7ServiceTest {
         // Delete all .hl7 files
         File hl7Folder = Paths.get(hl7FolderName).toFile();
         for (File f : hl7Folder.listFiles()) {
-            if (f.getName().endsWith(".hl7")) {
+            if (f.getName().endsWith(".hl7.enc")) {
                 f.delete();
             }
         }

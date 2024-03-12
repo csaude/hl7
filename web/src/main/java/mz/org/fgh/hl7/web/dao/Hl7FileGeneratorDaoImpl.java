@@ -8,7 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import mz.org.fgh.hl7.web.model.PatientDemographic;
-import mz.org.fgh.hl7.web.util.Util;
+import mz.org.fgh.hl7.web.util.Hl7Util;
 
 @Repository
 public class Hl7FileGeneratorDaoImpl implements Hl7FileGeneratorDao {
@@ -221,7 +221,7 @@ public class Hl7FileGeneratorDaoImpl implements Hl7FileGeneratorDao {
 		+ "    p.voided = 0"
 		+ "    AND pe.voided = 0"
 		+ "    AND LENGTH(pid.identifier) = 21"
-		+ "    AND pid.lUuid IN (" + Util.listToString(locationsByUuid) + ")"
+		+ "    AND pid.lUuid IN (" + Hl7Util.listToString(locationsByUuid) + ")"
 		+ " GROUP BY"
 		+ "    pid.identifier;";
 
