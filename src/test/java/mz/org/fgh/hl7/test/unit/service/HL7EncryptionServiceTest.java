@@ -43,8 +43,6 @@ public class HL7EncryptionServiceTest {
 		try {
 			if (!Files.exists(hl7FilePath)) {
 				Files.createFile(hl7FilePath);
-			} else {
-				System.out.println("File already exists: " + hl7FilePath);
 			}
 		} catch (IOException e) {
 			System.err.println("Failed to create file: " + e.getMessage());
