@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 import org.springframework.stereotype.Service;
 
@@ -44,7 +45,7 @@ public class HL7EncryptionServiceImpl implements HL7EncryptionService {
             
             // Create a copy of the encrypted file with a hidden filename
             Path destinationPath = donePath.resolveSibling(".Hidden." + donePath.getFileName().toString());
-            Files.copy(donePath, destinationPath);
+            Files.copy(donePath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
 
 
             
