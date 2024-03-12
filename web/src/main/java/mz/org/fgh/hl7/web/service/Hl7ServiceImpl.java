@@ -81,8 +81,9 @@ public class Hl7ServiceImpl implements Hl7Service {
 
 	public Hl7ServiceImpl(HL7EncryptionService encryptionService, Hl7FileGeneratorDao hl7FileGeneratorDao,
 			ObjectMapper objectMapper,
-			@Value("${app.hl7.folder}") String hl7FolderName, @Value("${app.hl7.filename}") String fileName,
-			@Value("${hl7.passPhrase}") String passPhrase) {
+			@Value("${app.hl7.folder}") String hl7FolderName,
+			@Value("${app.hl7.filename}") String fileName,
+			@Value("${app.hl7.passPhrase}") String passPhrase) {
 		this.encryptionService = encryptionService;
 		this.objectMapper = objectMapper;
 		this.hl7FileGeneratorDao = hl7FileGeneratorDao;

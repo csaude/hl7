@@ -30,7 +30,7 @@ public class HL7EncryptionServiceTest {
 
 	private Path hl7FilePath;
 
-	@Value("${hl7.passPhrase}")
+	@Value("${app.hl7.passPhrase}")
 	private String passPhrase;
 
 	@BeforeEach
