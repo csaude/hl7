@@ -38,14 +38,6 @@ public class HL7EncryptionServiceTest {
 	@BeforeEach
 	public void beforeEach() {
 		hl7FilePath = Paths.get(hl7FolderName, hl7FileName + ".hl7.enc");
-
-		/*try {
-			if (!Files.exists(hl7FilePath)) {
-				Files.createFile(hl7FilePath);
-			}
-		} catch (IOException e) {
-			System.err.println("Failed to create file: " + e.getMessage());
-		}*/
 	}
 
 	@AfterEach

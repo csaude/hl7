@@ -15,15 +15,24 @@ import org.springframework.stereotype.Service;
 public class HL7EncryptionServiceImpl implements HL7EncryptionService {
 
 	public void encrypt(ByteArrayOutputStream outputStream, String passPhrase, Path donePath) { 
+		
         try {
             // Convert the ByteArrayOutputStream to a ByteArrayInputStream
             ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
 
-            // Construct the OpenSSL command
-            String command = String.format("openssl enc -aes-256-cbc -md sha256 -salt -out %s -k %s", donePath, passPhrase); 
+            String[] command = {
+            	    "openssl",
+            	    "enc",
+            	    "-aes-256-cbc",
+            	    "-md", "sha256",
+            	    "-salt",
+            	    "-out", donePath.toString(),
+            	    "-k", passPhrase
+            	};
 
-            // Create ProcessBuilder instance with the command
-            ProcessBuilder processBuilder = new ProcessBuilder("bash", "-c", command); // For Unix-like systems, change to "cmd", "/c", command for Windows
+            // Create ProcessBuilder instance with the command and its arguments
+            ProcessBuilder processBuilder = new ProcessBuilder(command);
+
 
             // Start the process
             Process process = processBuilder.start();
@@ -56,11 +65,17 @@ public class HL7EncryptionServiceImpl implements HL7EncryptionService {
 	
 	public InputStream desincrypt(Path encryptedFilePath, String passPhrase) {
         try {
-            // Construct the OpenSSL command
-            String command = String.format("openssl enc -aes-256-cbc -d -in %s -k %s", encryptedFilePath, passPhrase);
+        	String[] command = {
+        			"openssl",
+        			"enc",
+        			"-aes-256-cbc",
+        			"-d",
+        			"-in", encryptedFilePath.toString(), 
+        			"-k", passPhrase 
+        	};
 
             // Create ProcessBuilder instance with the command
-            ProcessBuilder processBuilder = new ProcessBuilder("bash", "-c", command);
+            ProcessBuilder processBuilder = new ProcessBuilder(command);
 
             // Start the process
             Process process = processBuilder.start();
