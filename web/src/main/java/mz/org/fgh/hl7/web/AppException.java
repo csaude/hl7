@@ -2,7 +2,9 @@ package mz.org.fgh.hl7.web;
 
 public class AppException extends RuntimeException {
 
-    public AppException(String message) {
+    private static final long serialVersionUID = 1L;
+
+	public AppException(String message) {
         super(message);
     }
 
