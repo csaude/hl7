@@ -4,7 +4,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,13 +39,13 @@ public class HL7EncryptionServiceTest {
 	public void beforeEach() {
 		hl7FilePath = Paths.get(hl7FolderName, hl7FileName + ".hl7.enc");
 
-		try {
+		/*try {
 			if (!Files.exists(hl7FilePath)) {
 				Files.createFile(hl7FilePath);
 			}
 		} catch (IOException e) {
 			System.err.println("Failed to create file: " + e.getMessage());
-		}
+		}*/
 	}
 
 	@AfterEach
