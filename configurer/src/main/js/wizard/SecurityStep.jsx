@@ -64,7 +64,7 @@ export default function SecurityStep({ configuration, onConfigurationChange }) {
       if (keyStore.disaSecretKeyAlias) {
         onConfigurationChange({
           ...configuration,
-          disaSecretKey: keyStore.disaSecretKeyAlias,
+          appHL7PassPhrase: keyStore.disaSecretKeyAlias,
         });
       }
     } catch (error) {
@@ -126,12 +126,12 @@ export default function SecurityStep({ configuration, onConfigurationChange }) {
         />
       </Form.Group>
       <Form.Group className="mb-3">
-        <Form.Label htmlFor="disaSecretKey">DISA secret key</Form.Label>
+        <Form.Label htmlFor="appHL7PassPhrase">DISA secret key</Form.Label>
         <PasswordFormControl
-          id="disaSecretKey"
-          name="disaSecretKey"
+          id="appHL7PassPhrase"
+          name="appHL7PassPhrase"
           label="DISA secret key"
-          value={configuration.disaSecretKey}
+          value={configuration.appHL7PassPhrase}
           onChange={handleConfigurationChange}
           required
         />

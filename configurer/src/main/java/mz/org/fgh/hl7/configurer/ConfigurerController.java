@@ -1,5 +1,8 @@
 package mz.org.fgh.hl7.configurer;
 
+import static mz.org.fgh.hl7.lib.Constants.DISA_SECRET_KEY_ALIAS;
+import static mz.org.fgh.hl7.lib.Constants.KEY_STORE_TYPE;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -44,10 +47,6 @@ import mz.org.fgh.hl7.lib.Base64EncoderDecoder;
 public class ConfigurerController {
 
     private static final String DISA_SECRET_KEY_CYPHER = "AES";
-
-    private static final String DISA_SECRET_KEY_ALIAS = "disaSecretKeyAlias";
-
-    private static final String KEY_STORE_TYPE = "JCEKS";
 
     private static final Path[] TOMCAT_WEBAPPS_DIR = new Path[] {
             Paths.get("/", "usr", "local", "tomcat", "webapps"),
@@ -200,7 +199,7 @@ public class ConfigurerController {
         }
 
         try (OutputStream outStream = Files.newOutputStream(path)) {
-            SecretKey secretKey = new SecretKeySpec(config.getDisaSecretKey().getBytes(), DISA_SECRET_KEY_CYPHER);
+            SecretKey secretKey = new SecretKeySpec(config.getAppHL7PassPhrase().getBytes(), DISA_SECRET_KEY_CYPHER);
             KeyStore.SecretKeyEntry secretKeyEntry = new KeyStore.SecretKeyEntry(secretKey);
             KeyStore.ProtectionParameter protectionParam = new KeyStore.PasswordProtection(password);
             keyStore.setEntry(DISA_SECRET_KEY_ALIAS, secretKeyEntry, protectionParam);
@@ -222,7 +221,7 @@ public class ConfigurerController {
         Path applicationProperties = Paths.get(folder, "WEB-INF", "classes", "application.properties");
         try (BufferedWriter writer = Files
                 .newBufferedWriter(applicationProperties.resolveSibling("application.properties.enc"))) {
-            props.setProperty("keystore.path", Paths.get(config.getKeyStorePath()).toRealPath().toString());
+            props.setProperty("app.keyStore", Paths.get(config.getKeyStorePath()).toRealPath().toString());
             props.setProperty("app.username", config.getAppUsername());
             props.setProperty("app.password", config.getAppPassword());
             props.setProperty("openmrs.url", config.getOpenmrsUrl());

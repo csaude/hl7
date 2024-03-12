@@ -16,19 +16,24 @@ import org.springframework.util.Assert;
  */
 public class EncryptedEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
-    private final EncryptedPropertySourceLoader loader = new EncryptedPropertySourceLoader();
-
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+        System.out.println(environment);
+        String keyStorePassword = environment.getProperty("app.keyStore.password");
+        if (keyStorePassword == null) {
+            throw new IllegalArgumentException("app.keyStore.password is missing.");
+        }
+        EncryptedPropertySourceLoader loader = new EncryptedPropertySourceLoader(
+                keyStorePassword);
         Resource path = new ClassPathResource("application.properties.enc");
-        PropertySource<?> propertySource = loadEncryptedProperties(path);
+        PropertySource<?> propertySource = loadEncryptedProperties(loader, path);
         environment.getPropertySources().addFirst(propertySource);
     }
 
-    private PropertySource<?> loadEncryptedProperties(Resource path) {
+    private PropertySource<?> loadEncryptedProperties(EncryptedPropertySourceLoader loader, Resource path) {
         Assert.isTrue(path.exists(), () -> "Resource " + path + " does not exist");
         try {
-            return this.loader.load("custom-resource", path).get(0);
+            return loader.load("custom-resource", path).get(0);
         } catch (IOException ex) {
             throw new IllegalStateException("Failed to load yaml configuration from " + path, ex);
         }

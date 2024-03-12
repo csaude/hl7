@@ -37,10 +37,10 @@ public class Configuration {
     private String keyStorePassword = "";
 
     @NotBlank
-    private String disaSecretKey = "";
+    private String appHL7PassPhrase = "";
 
     public void load(Properties properties) {
-        keyStorePath = properties.getProperty("keystore.path");
+        keyStorePath = properties.getProperty("app.keyStore");
         appUsername = properties.getProperty("app.username");
         appPassword = properties.getProperty("app.password");
         openmrsUrl = properties.getProperty("openmrs.url");
@@ -131,12 +131,11 @@ public class Configuration {
         this.keyStorePassword = keyStorePassword;
     }
 
-    public String getDisaSecretKey() {
-        return disaSecretKey;
+    public String getAppHL7PassPhrase() {
+        return appHL7PassPhrase;
     }
 
-    public void setDisaSecretKey(String disaSecretKey) {
-        this.disaSecretKey = disaSecretKey;
+    public void setAppHL7PassPhrase(String disaSecretKey) {
+        this.appHL7PassPhrase = disaSecretKey;
     }
-
 }
