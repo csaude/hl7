@@ -8,12 +8,16 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.springframework.stereotype.Service;
 
 @Service
 public class HL7EncryptionServiceImpl implements HL7EncryptionService {
-
+	
+    private static final Logger logger = Logger.getLogger(HL7EncryptionServiceImpl.class.getName());
+	
 	public void encrypt(ByteArrayOutputStream outputStream, String passPhrase, Path donePath) { 
 		
         try {
@@ -59,11 +63,13 @@ public class HL7EncryptionServiceImpl implements HL7EncryptionService {
 
             
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+        	logger.log(Level.SEVERE, "Encryption failed: A cifra do arquivo hl7 falhou. Por favor, "
+        			+ "verifique se o aplicativo OpenSSL está instalado corretamente." + e.getMessage());
+        	logger.log(Level.SEVERE, "Stack trace:", e);
         }
     }
 	
-	public InputStream desincrypt(Path encryptedFilePath, String passPhrase) {
+	public InputStream decrypt(Path encryptedFilePath, String passPhrase) {
         try {
         	String[] command = {
         			"openssl",

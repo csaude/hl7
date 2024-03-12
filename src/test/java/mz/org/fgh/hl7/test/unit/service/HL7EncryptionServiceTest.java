@@ -61,7 +61,7 @@ public class HL7EncryptionServiceTest {
 
 	@Test
 	public void testDecrypt() throws Exception {
-		InputStream decryptedInputStream = hl7EncryptionService.desincrypt(hl7FilePath, passPhrase);
+		InputStream decryptedInputStream = hl7EncryptionService.decrypt(hl7FilePath, passPhrase);
 		assertTrue(decryptedInputStream != null);
 	}
 }

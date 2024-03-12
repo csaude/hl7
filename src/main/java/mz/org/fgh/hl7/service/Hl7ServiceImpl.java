@@ -227,7 +227,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 			throw new AppException("hl7.search.error.file.not.found");
 		}
 
-		try (InputStream inputStream = encryptionService.desincrypt(selectedFile.toPath(), passPhrase)) {
+		try (InputStream inputStream = encryptionService.decrypt(selectedFile.toPath(), passPhrase)) {
 
 			Hl7InputStreamMessageIterator iter = new Hl7InputStreamMessageIterator(inputStream);
 
