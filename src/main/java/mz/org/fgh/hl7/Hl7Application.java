@@ -17,3 +17,4 @@ public class Hl7Application extends SpringBootServletInitializer {
 		SpringApplication.run(Hl7Application.class, args);
 	}
 }
+		

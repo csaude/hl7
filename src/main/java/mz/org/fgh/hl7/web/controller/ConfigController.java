@@ -50,6 +50,12 @@ public class ConfigController {
             RedirectAttributes redirectAttrs) {
 
         try {
+
+            if (!hl7Service.getHl7FileFuture().isDone()) {
+                throw new AppException(
+                        "hl7.files.processing.error.previous");
+            }
+
             HL7File hl7File = hl7Service.getHl7File();
             if (hl7File != null
                     && nullOrEquals(hl7FileForm.getProvince(), hl7File.getProvince())
