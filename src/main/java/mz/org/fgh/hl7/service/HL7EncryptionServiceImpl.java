@@ -15,28 +15,26 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class HL7EncryptionServiceImpl implements HL7EncryptionService {
-	
+
     private static final Logger logger = Logger.getLogger(HL7EncryptionServiceImpl.class.getName());
-	
-	public void encrypt(ByteArrayOutputStream outputStream, String passPhrase, Path donePath) { 
-		
-        try {
-            // Convert the ByteArrayOutputStream to a ByteArrayInputStream
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+
+    public void encrypt(ByteArrayOutputStream outputStream, String passPhrase, Path donePath) {
+
+        // Convert the ByteArrayOutputStream to a ByteArrayInputStream
+        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray())) {
 
             String[] command = {
-            	    "openssl",
-            	    "enc",
-            	    "-aes-256-cbc",
-            	    "-md", "sha256",
-            	    "-salt",
-            	    "-out", donePath.toString(),
-            	    "-k", passPhrase
-            	};
+                    "openssl",
+                    "enc",
+                    "-aes-256-cbc",
+                    "-md", "sha256",
+                    "-salt",
+                    "-out", donePath.toString(),
+                    "-k", passPhrase
+            };
 
             // Create ProcessBuilder instance with the command and its arguments
             ProcessBuilder processBuilder = new ProcessBuilder(command);
-
 
             // Start the process
             Process process = processBuilder.start();
@@ -49,36 +47,34 @@ public class HL7EncryptionServiceImpl implements HL7EncryptionService {
                     stdin.write(buffer, 0, length);
                 }
             }
-            
+
             // Wait for the process to finish
             int exitCode = process.waitFor();
 
             // Print the exit code
             System.out.println("Command executed with exit code: " + exitCode);
-            
+
             // Create a copy of the encrypted file with a hidden filename
             Path destinationPath = donePath.resolveSibling(".Hidden." + donePath.getFileName().toString());
             Files.copy(donePath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
 
-
-            
         } catch (IOException | InterruptedException e) {
-        	logger.log(Level.SEVERE, "A cifra do arquivo hl7 falhou. Por favor, "
-        			+ "verifique se o aplicativo OpenSSL está instalado corretamente." + e.getMessage());
-        	logger.log(Level.SEVERE, "Stack trace:", e);
+            logger.log(Level.SEVERE, "A cifra do arquivo hl7 falhou. Por favor, "
+                    + "verifique se o aplicativo OpenSSL está instalado corretamente." + e.getMessage());
+            logger.log(Level.SEVERE, "Stack trace:", e);
         }
     }
-	
-	public InputStream decrypt(Path encryptedFilePath, String passPhrase) {
+
+    public InputStream decrypt(Path encryptedFilePath, String passPhrase) {
         try {
-        	String[] command = {
-        			"openssl",
-        			"enc",
-        			"-aes-256-cbc",
-        			"-d",
-        			"-in", encryptedFilePath.toString(), 
-        			"-k", passPhrase 
-        	};
+            String[] command = {
+                    "openssl",
+                    "enc",
+                    "-aes-256-cbc",
+                    "-d",
+                    "-in", encryptedFilePath.toString(),
+                    "-k", passPhrase
+            };
 
             // Create ProcessBuilder instance with the command
             ProcessBuilder processBuilder = new ProcessBuilder(command);
@@ -105,8 +101,8 @@ public class HL7EncryptionServiceImpl implements HL7EncryptionService {
             return new ByteArrayInputStream(outputStream.toByteArray());
 
         } catch (IOException | InterruptedException e) {
-        	logger.log(Level.SEVERE, "A decifra do arquivo hl7 falhou" + e.getMessage());
-        	logger.log(Level.SEVERE, "Stack trace:", e);
+            logger.log(Level.SEVERE, "A decifra do arquivo hl7 falhou" + e.getMessage());
+            logger.log(Level.SEVERE, "Stack trace:", e);
             return null;
         }
     }
