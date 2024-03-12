@@ -18,5 +18,5 @@ public interface HL7EncryptionService {
 	 * @param the secret key used to desIncrypt the hl7 file
 	 * @return desIncrypt hl7 file
 	 */
-	public InputStream desincrypt(Path encryptedFilePath, String passPhrase);
+	public InputStream decrypt(Path encryptedFilePath, String passPhrase);
 }
