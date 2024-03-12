@@ -4,6 +4,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,13 +32,23 @@ public class HL7EncryptionServiceTest {
 	private String hl7FileName;
 
 	private Path hl7FilePath;
-	
+
 	@Value("${hl7.passPhrase}")
 	private String passPhrase;
 
 	@BeforeEach
 	public void beforeEach() {
 		hl7FilePath = Paths.get(hl7FolderName, hl7FileName + ".hl7.enc");
+
+		try {
+			if (!Files.exists(hl7FilePath)) {
+				Files.createFile(hl7FilePath);
+			} else {
+				System.out.println("File already exists: " + hl7FilePath);
+			}
+		} catch (IOException e) {
+			System.err.println("Failed to create file: " + e.getMessage());
+		}
 	}
 
 	@AfterEach
@@ -58,10 +69,10 @@ public class HL7EncryptionServiceTest {
 
 		assertTrue(Files.exists(hl7FilePath));
 	}
-	
+
 	@Test
-    public void testDecrypt() throws Exception {
-        InputStream decryptedInputStream = hl7EncryptionService.desincrypt(hl7FilePath, passPhrase);
-        assertTrue(decryptedInputStream != null);
-    }
+	public void testDecrypt() throws Exception {
+		InputStream decryptedInputStream = hl7EncryptionService.desincrypt(hl7FilePath, passPhrase);
+		assertTrue(decryptedInputStream != null);
+	}
 }
