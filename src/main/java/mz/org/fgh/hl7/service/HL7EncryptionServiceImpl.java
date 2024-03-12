@@ -63,7 +63,7 @@ public class HL7EncryptionServiceImpl implements HL7EncryptionService {
 
             
         } catch (IOException | InterruptedException e) {
-        	logger.log(Level.SEVERE, "Encryption failed: A cifra do arquivo hl7 falhou. Por favor, "
+        	logger.log(Level.SEVERE, "A cifra do arquivo hl7 falhou. Por favor, "
         			+ "verifique se o aplicativo OpenSSL está instalado corretamente." + e.getMessage());
         	logger.log(Level.SEVERE, "Stack trace:", e);
         }
@@ -105,7 +105,8 @@ public class HL7EncryptionServiceImpl implements HL7EncryptionService {
             return new ByteArrayInputStream(outputStream.toByteArray());
 
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+        	logger.log(Level.SEVERE, "A decifra do arquivo hl7 falhou" + e.getMessage());
+        	logger.log(Level.SEVERE, "Stack trace:", e);
             return null;
         }
     }
