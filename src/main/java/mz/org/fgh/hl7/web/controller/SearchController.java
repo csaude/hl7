@@ -8,7 +8,7 @@ import javax.validation.Valid;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.StringUtils;
+import org.springframework.util.ObjectUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -62,7 +62,6 @@ public class SearchController {
         return Location.joinLocations(hl7File.getHealthFacilities());
     }
 
-    @SuppressWarnings("deprecation")
 	@GetMapping
     public String search(@Valid SearchForm searchForm,
             BindingResult bindingResult,
@@ -70,7 +69,7 @@ public class SearchController {
 
         try {
 
-            if (bindingResult.hasErrors() || StringUtils.isEmpty(searchForm.getPartialNid())) {
+            if (bindingResult.hasErrors() || ObjectUtils.isEmpty(searchForm.getPartialNid())) {
                 return "search";
             }
 
