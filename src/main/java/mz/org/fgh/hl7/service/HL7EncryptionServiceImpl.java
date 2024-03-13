@@ -28,7 +28,7 @@ public class HL7EncryptionServiceImpl implements HL7EncryptionService {
             	    "openssl",
             	    "enc",
             	    "-aes-256-cbc",
-            	    "-md", "sha256",
+            	    "-md", "md5",
             	    "-salt",
             	    "-out", donePath.toString(),
             	    "-k", passPhrase
@@ -75,6 +75,8 @@ public class HL7EncryptionServiceImpl implements HL7EncryptionService {
         			"openssl",
         			"enc",
         			"-aes-256-cbc",
+        			"-md", "md5",
+        			"-salt",
         			"-d",
         			"-in", encryptedFilePath.toString(), 
         			"-k", passPhrase 
