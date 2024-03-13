@@ -41,6 +41,7 @@ import ca.uhn.hl7v2.model.v251.segment.PID;
 import ca.uhn.hl7v2.model.v251.segment.PV1;
 import ca.uhn.hl7v2.parser.PipeParser;
 import ca.uhn.hl7v2.util.Hl7InputStreamMessageIterator;
+import mz.org.fgh.hl7.lib.service.HL7EncryptionService;
 import mz.org.fgh.hl7.web.AppException;
 import mz.org.fgh.hl7.web.dao.Hl7FileGeneratorDao;
 import mz.org.fgh.hl7.web.generator.AdtMessageFactory;
@@ -83,7 +84,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 			ObjectMapper objectMapper,
 			@Value("${app.hl7.folder}") String hl7FolderName,
 			@Value("${app.hl7.filename}") String fileName,
-			@Value("${app.hl7.passPhrase}") String passPhrase) {
+			@Value("${app.disa.secretKey}") String passPhrase) {
 		this.encryptionService = encryptionService;
 		this.objectMapper = objectMapper;
 		this.hl7FileGeneratorDao = hl7FileGeneratorDao;

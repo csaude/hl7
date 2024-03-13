@@ -22,3 +22,8 @@ npm run watch
 This ensures that the application will load the latest assets.
 
 For production builds, it is only necessary to run maven as `frontend-maven-plugin` will take care of downloading and installing `nodejs` and `npm` by itselt. And then install dependencies before running the `webpack` build.
+
+## Web
+The web app is a spring boot application that allows the user to select health facilities from which to extract demographic data.
+The data is stored in an encrypted format, with the keys loaded from a keystore.
+A keystore password (`app.keyStore.password`) configuration parameter must be provided in order for the application to start.

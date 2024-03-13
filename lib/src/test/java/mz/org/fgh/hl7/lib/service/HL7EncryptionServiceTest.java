@@ -1,6 +1,6 @@
-package mz.org.fgh.hl7.web.service;
+package mz.org.fgh.hl7.lib.service;
 
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -8,30 +8,32 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Random;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
 public class HL7EncryptionServiceTest {
 
-	@Autowired
 	private HL7EncryptionService hl7EncryptionService;
 
-	@Value("${app.hl7.folder}")
-	String hl7FolderName;
+	private String hl7FolderName;
 
-	@Value("${app.hl7.filename}")
 	private String hl7FileName;
 
 	private Path hl7FilePath;
 
-	@Value("${app.hl7.passPhrase}")
 	private String passPhrase;
+
+	public HL7EncryptionServiceTest() {
+		this.hl7EncryptionService = new HL7EncryptionServiceImpl();
+		this.hl7FolderName = "/tmp/";
+		this.hl7FileName = "Patient_Demographic_Data";
+		byte[] bytes = new byte[10];
+		new Random().nextBytes(bytes);
+		this.passPhrase = new String(bytes);
+	}
 
 	@BeforeEach
 	public void beforeEach() {
@@ -54,12 +56,12 @@ public class HL7EncryptionServiceTest {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		hl7EncryptionService.encrypt(outputStream, passPhrase, hl7FilePath);
 
-		assertTrue(Files.exists(hl7FilePath));
+		assertThat(Files.exists(hl7FilePath)).isTrue();
 	}
 
 	@Test
 	public void testDecrypt() throws Exception {
 		InputStream decryptedInputStream = hl7EncryptionService.decrypt(hl7FilePath, passPhrase);
-		assertTrue(decryptedInputStream != null);
+		assertThat(decryptedInputStream != null).isTrue();
 	}
 }

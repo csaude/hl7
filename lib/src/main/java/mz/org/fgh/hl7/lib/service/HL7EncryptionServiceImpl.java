@@ -1,19 +1,14 @@
-package mz.org.fgh.hl7.web.service;
+package mz.org.fgh.hl7.lib.service;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.springframework.stereotype.Service;
-
-@Service
 public class HL7EncryptionServiceImpl implements HL7EncryptionService {
 
     private static final Logger logger = Logger.getLogger(HL7EncryptionServiceImpl.class.getName());
@@ -53,10 +48,6 @@ public class HL7EncryptionServiceImpl implements HL7EncryptionService {
 
             // Print the exit code
             System.out.println("Command executed with exit code: " + exitCode);
-
-            // Create a copy of the encrypted file with a hidden filename
-            Path destinationPath = donePath.resolveSibling(".Hidden." + donePath.getFileName().toString());
-            Files.copy(donePath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
 
         } catch (IOException | InterruptedException e) {
             logger.log(Level.SEVERE, "A cifra do arquivo hl7 falhou. Por favor, "

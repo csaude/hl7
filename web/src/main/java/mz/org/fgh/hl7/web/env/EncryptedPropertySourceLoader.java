@@ -1,5 +1,6 @@
 package mz.org.fgh.hl7.web.env;
 
+import static mz.org.fgh.hl7.lib.Constants.CSAUDE_SECRET_KEY_ALIAS;
 import static mz.org.fgh.hl7.lib.Constants.DISA_SECRET_KEY_ALIAS;
 
 import java.io.IOException;
@@ -48,14 +49,19 @@ public class EncryptedPropertySourceLoader implements PropertySourceLoader {
                 .decodeBase64ToInputStreamReader(resource.getFile().toPath())) {
             Properties props = new Properties();
             props.load(input);
-            String passPhrase = loadPassPhraseFromKeyStore(props.getProperty("app.keyStore"), keyStorePassword);
-            props.setProperty("app.hl7.passPhrase", passPhrase);
+            String passPhrase = loadKeyFromKeyStore(props.getProperty("app.keyStore"), keyStorePassword,
+                    DISA_SECRET_KEY_ALIAS);
+            String csaudeSecretKey = loadKeyFromKeyStore(props.getProperty("app.keyStore"), keyStorePassword,
+                    CSAUDE_SECRET_KEY_ALIAS);
+            props.setProperty("app.disa.secretKey", passPhrase);
+            props.setProperty("app.csaude.secretKey", csaudeSecretKey);
             return Collections.singletonList(new PropertiesPropertySource("decrypted-props", props));
         }
 
     }
 
-    private String loadPassPhraseFromKeyStore(String keyStorePath, String keyStorePassword) throws IOException {
+    private String loadKeyFromKeyStore(String keyStorePath, String keyStorePassword, String entryName)
+            throws IOException {
         Path path = Paths.get(keyStorePath);
         try (InputStream is = Files.newInputStream(path)) {
             KeyStore keyStore = KeyStore.getInstance(Constants.KEY_STORE_TYPE);
@@ -64,7 +70,7 @@ public class EncryptedPropertySourceLoader implements PropertySourceLoader {
             KeyStore.ProtectionParameter protectionParam = new KeyStore.PasswordProtection(
                     keyStorePassword.toCharArray());
             KeyStore.SecretKeyEntry secretKeyEntry = (KeyStore.SecretKeyEntry) keyStore
-                    .getEntry(DISA_SECRET_KEY_ALIAS, protectionParam);
+                    .getEntry(entryName, protectionParam);
 
             if (secretKeyEntry == null) {
                 throw new IOException("disaSecretKey alias missing from keystore");
