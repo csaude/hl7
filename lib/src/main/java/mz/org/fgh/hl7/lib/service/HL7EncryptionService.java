@@ -1,4 +1,4 @@
-package mz.org.fgh.hl7.web.service;
+package mz.org.fgh.hl7.lib.service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;

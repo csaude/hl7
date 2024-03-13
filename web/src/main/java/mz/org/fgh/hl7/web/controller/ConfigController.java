@@ -2,6 +2,7 @@ package mz.org.fgh.hl7.web.controller;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import javax.validation.Valid;
 
@@ -33,8 +34,6 @@ public class ConfigController {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigController.class);
 
-    private static Hl7FileForm previousHl7FileForm;
-
     private Hl7Service hl7Service;
     private LocationService locationService;
 
@@ -51,7 +50,8 @@ public class ConfigController {
 
         try {
 
-            if (!hl7Service.getHl7FileFuture().isDone()) {
+            CompletableFuture<HL7File> hl7FileProcessing = hl7Service.getHl7FileFuture();
+            if (hl7FileProcessing != null && !hl7FileProcessing.isDone()) {
                 throw new AppException(
                         "hl7.files.processing.error.previous");
             }

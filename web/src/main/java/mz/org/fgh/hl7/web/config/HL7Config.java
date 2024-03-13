@@ -12,11 +12,14 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 
+import mz.org.fgh.hl7.lib.service.HL7EncryptionService;
+import mz.org.fgh.hl7.lib.service.HL7EncryptionServiceImpl;
+
 @Configuration
 @EnableAsync
 @EnableCaching
 public class HL7Config {
-	
+
     @Bean
     public MessageSource messageSource() {
         ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
@@ -37,5 +40,10 @@ public class HL7Config {
         SessionLocaleResolver slr = new SessionLocaleResolver();
         slr.setDefaultLocale(new Locale("pt"));
         return slr;
+    }
+
+    @Bean
+    public HL7EncryptionService encryptionService() {
+        return new HL7EncryptionServiceImpl();
     }
 }
