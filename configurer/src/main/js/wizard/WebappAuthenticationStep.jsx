@@ -68,7 +68,7 @@ export default function WebappAuthenticationStep({
 
       {error && !isValidationError() && (
         <Alert variant="danger">
-          Ocorreu um erro inesperado. Por favor tente novamente.
+          Ocorreu um erro inesperado. Se o erro persistir, consulte os logs do servidor.
         </Alert>
       )}
 

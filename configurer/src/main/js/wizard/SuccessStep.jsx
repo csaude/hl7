@@ -9,7 +9,10 @@ export default function SuccessStep() {
   }
   return (
     <div className="wizard-success">
-      <h1 className="text-center">Configurado com sucesso!</h1>
+      <h1 className="text-center">Configurado com sucesso</h1>
+      <p>
+        🛈 Deve reiniciar o Tomcat® para aplicar as novas configurações.
+      </p>
       <Button onClick={handleClick}>Voltar ao inicio</Button>
     </div>
   );

@@ -7,16 +7,16 @@ import java.nio.file.Path;
 public interface HL7EncryptionService {
 
 	/**
-	 * @param the demographic patient information in memory to the encrypted
-	 * @param the secret key used to encrypt the hl7 file
-	 * @param the location to save the encrypted hl7 file
+	 * @param outputStream the file to encrypt
+	 * @param passPhrase key used to encrypt the file
+	 * @param donePath where to save the encrypted file
 	 */
 	public void encrypt(ByteArrayOutputStream outputStream, String passPhrase, Path donePath);
 	
 	/**
-	 * @param the location of the encrypted hl7 file
-	 * @param the secret key used to desIncrypt the hl7 file
-	 * @return desIncrypt hl7 file
+	 * @param encryptedFilePath path of the encrypted file
+	 * @param passPhrase key used to decrypt the file
+	 * @return The decrypted file
 	 */
 	public InputStream decrypt(Path encryptedFilePath, String passPhrase);
 }

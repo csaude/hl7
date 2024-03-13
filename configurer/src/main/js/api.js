@@ -11,53 +11,6 @@ class ValidationError extends Error {
   }
 }
 
-class AuthenticationError extends Error {
-  constructor(...params) {
-    super(...params);
-
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, AuthenticationError);
-    }
-
-    this.name = "AuthenticationError";
-  }
-}
-
-class AuthorizationError extends Error {
-  constructor(...params) {
-    super(...params);
-
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, AuthorizationError);
-    }
-
-    this.name = "AuthorizationError";
-  }
-}
-
-async function fetchKeyStore(keyStorePath, keyStorePassword) {
-  const response = await fetch(
-    `/key-store?keyStorePath=${encodeURIComponent(
-      keyStorePath
-    )}&keyStorePassword=${encodeURIComponent(keyStorePassword)}`
-  );
-  if (response.status === 401) {
-    throw new AuthenticationError("Password incorrecta.");
-  }
-  if (response.status === 403) {
-    throw new AuthorizationError(
-      "Não tem permissões suficentes para abrir a key store."
-    );
-  }
-  if (response.status === 404) {
-    throw new Error("A key store não foi encontrada.");
-  }
-  if (response.status != 200) {
-    throw new Error("Não foi possível carregar a key store.");
-  }
-  return response.json();
-}
-
 async function fetchConfiguration(folder) {
   const response = await fetch(
     `/configuration?folder=${encodeURIComponent(folder)}`
@@ -113,11 +66,8 @@ async function saveConfiguration(folder, configuration) {
   }
 }
 export {
-  AuthenticationError,
-  AuthorizationError,
   ValidationError,
   fetchConfiguration,
-  fetchKeyStore,
   fetchWebappFolder,
   saveConfiguration,
 };

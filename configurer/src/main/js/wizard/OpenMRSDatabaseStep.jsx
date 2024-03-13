@@ -54,7 +54,7 @@ export default function OpenMRSDatabaseStep({
           required
         />
         <Form.Text id="passwordHelpBlock" muted>
-          ⓘ Ex. jdbc:mysql://127.0.0.1:3306/openmrs
+          🛈 Ex. jdbc:mysql://127.0.0.1:3306/openmrs
         </Form.Text>
         <Form.Control.Feedback type="invalid">
           Por favor insira a URL.
