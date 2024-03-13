@@ -24,6 +24,10 @@
       background-color: #f5f5f5;
     }
 
+    .logo {
+      margin-bottom: 1rem;
+    }
+
     .form-signin {
       max-width: 330px;
       padding: 15px;
@@ -49,7 +53,7 @@
 
 <body class="text-center flex-column justify-content-center">
 
-  <img src="/images/hl7-logo-header.png"/>
+  <img class="logo" src="images/hl7-logo-header.png" />
 
   <div class="alert alert-danger" role="alert" th:if="${param.error}">
     <i class="bi bi-exclamation-triangle"></i> <span th:text="#{hl7.login.error}"></span>

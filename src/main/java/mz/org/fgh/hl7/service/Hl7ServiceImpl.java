@@ -27,7 +27,6 @@ import javax.crypto.NoSuchPaddingException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -54,9 +53,6 @@ import mz.org.fgh.hl7.util.Hl7Util;
 @Service
 public class Hl7ServiceImpl implements Hl7Service {
 
-	@Autowired
-	private HL7EncryptionService encryptionService;
-
 	private static final String METADATA_JSON = ".metadata.json";
 
 	private static final String PROCESSING_PREFIX = ".";
@@ -64,6 +60,8 @@ public class Hl7ServiceImpl implements Hl7Service {
 	private static final String HL7_EXTENSION = ".hl7.enc";
 
 	private static final Logger log = LoggerFactory.getLogger(Hl7ServiceImpl.class.getName());
+
+	private HL7EncryptionService encryptionService;
 
 	private Hl7FileGeneratorDao hl7FileGeneratorDao;
 
@@ -78,18 +76,17 @@ public class Hl7ServiceImpl implements Hl7Service {
 	private String hl7FileName;
 	
 	private String hl7HiddenFileName;
-	
-	@Value("${hl7.passPhrase}")
-	private String passPhrase;
 
-	public Hl7ServiceImpl(Hl7FileGeneratorDao hl7FileGeneratorDao, ObjectMapper objectMapper,
+	public Hl7ServiceImpl(HL7EncryptionService encryptionService, Hl7FileGeneratorDao hl7FileGeneratorDao, ObjectMapper objectMapper,
 			@Value("${app.hl7.folder}") String hl7FolderName, @Value("${app.hl7.filename}") String fileName,
-			@Value("${app.hl7.hidden.filename}") String hiddenFileName) {
+			@Value("${app.hl7.hidden.filename}") String hiddenFileName, @Value("${hl7.passPhrase}") String passPhrase) {
+		this.encryptionService = encryptionService;
 		this.objectMapper = objectMapper;
 		this.hl7FileGeneratorDao = hl7FileGeneratorDao;
 		this.hl7FolderName = hl7FolderName;
 		this.hl7FileName = fileName;
 		this.hl7HiddenFileName = hiddenFileName;
+		this.passPhrase = passPhrase;
 	}
 
 	@PostConstruct
@@ -157,13 +154,13 @@ public class Hl7ServiceImpl implements Hl7Service {
 					"Previous HL7 file generation is not yet done. Cancel it if you want to start a new one.");
 		}
 
-		Path processing = Paths.get(hl7FolderName).resolve(PROCESSING_PREFIX + hl7FileName + HL7_EXTENSION);
+		Path filePath = Paths.get(hl7FolderName).resolve(hl7FileName + HL7_EXTENSION);
 
 		try {
 
 			hl7FileFuture = new CompletableFuture<>();
 
-			createHl7File(hl7FileRequest, processing);
+			createHl7File(hl7FileRequest, filePath);
 
 			HL7File hl7File = new HL7File();
 			hl7File.setProvince(hl7FileRequest.getProvince());
@@ -181,9 +178,9 @@ public class Hl7ServiceImpl implements Hl7Service {
 			// Set this as the previous successfuly generated HL7 file
 			previousHl7File = hl7File;
 
-		} catch (IOException | HL7Exception | RuntimeException | 
-				InvalidKeyException | NoSuchPaddingException | NoSuchAlgorithmException |
-				InvalidAlgorithmParameterException | BadPaddingException | IllegalBlockSizeException e) {
+		} catch (IOException | HL7Exception | RuntimeException | InvalidKeyException | NoSuchPaddingException
+				| NoSuchAlgorithmException | InvalidAlgorithmParameterException | BadPaddingException
+				| IllegalBlockSizeException e) {
 
 			log.error("Error creating hl7", e);
 
@@ -192,14 +189,6 @@ public class Hl7ServiceImpl implements Hl7Service {
 			}
 			hl7FileFuture.completeExceptionally(e);
 
-		} finally {
-			if (Files.exists(processing)) {
-				try {
-					Files.delete(processing);
-				} catch (IOException e) {
-					log.error("Error deleting processing file", e);
-				}
-			}
 		}
 
 		return hl7FileFuture;
@@ -295,8 +284,6 @@ public class Hl7ServiceImpl implements Hl7Service {
 			InvalidAlgorithmParameterException, BadPaddingException, IllegalBlockSizeException {
 		log.info("createHl7File called...");
 
-		Files.createFile(filePath);
-
 		List<String> locationsByUuid = hl7FileRequest.getHealthFacilities().stream().map(Location::getUuid)
 				.collect(Collectors.toList());
 
@@ -314,12 +301,12 @@ public class Hl7ServiceImpl implements Hl7Service {
 		pipeParser.getParserConfiguration();
 		log.info("Done fetching patient demographics.");
 
-		try(ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+		try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
 
 			log.info("Serializing message...");
 
-			byteArrayOutputStream.write(headers.getBytes()); 
-			
+			byteArrayOutputStream.write(headers.getBytes());
+
 			// we encrypt patient at a time
 			for (PatientDemographic patient : patientDemographics) {
 				ADT_A24 adtMessage = AdtMessageFactory.createMessage("A24", patient);
@@ -332,14 +319,9 @@ public class Hl7ServiceImpl implements Hl7Service {
 
 			byteArrayOutputStream.write(footers.getBytes());
 
-			// Remove the dot from file name to mark as done processing
-			String processingfileName = filePath.getFileName().toString();
-			String doneFileName = processingfileName.split("\\.")[1];
-			Path donePath = filePath.resolveSibling(doneFileName + HL7_EXTENSION);
-			
-			encryptionService.encrypt(byteArrayOutputStream, passPhrase, donePath); 
+			encryptionService.encrypt(byteArrayOutputStream, passPhrase, filePath);
 
-			log.info("Message serialized to file {} successfully", donePath);
+			log.info("Message serialized to file {} successfully", filePath);
 		}
 	}
 
