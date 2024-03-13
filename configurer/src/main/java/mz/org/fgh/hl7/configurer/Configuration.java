@@ -30,17 +30,7 @@ public class Configuration {
     @NotBlank
     private String dataSourcePassword = "";
 
-    @NotBlank
-    private String keyStorePath = "";
-
-    @NotBlank
-    private String keyStorePassword = "";
-
-    @NotBlank
-    private String appHL7PassPhrase = "";
-
     public void load(Properties properties) {
-        keyStorePath = properties.getProperty("app.keyStore");
         appUsername = properties.getProperty("app.username");
         appPassword = properties.getProperty("app.password");
         openmrsUrl = properties.getProperty("openmrs.url");
@@ -113,29 +103,5 @@ public class Configuration {
 
     public void setOpenmrsUsername(String openmrsUsername) {
         this.openmrsUsername = openmrsUsername;
-    }
-
-    public String getKeyStorePath() {
-        return keyStorePath;
-    }
-
-    public void setKeyStorePath(String keyStorePath) {
-        this.keyStorePath = keyStorePath;
-    }
-
-    public String getKeyStorePassword() {
-        return keyStorePassword;
-    }
-
-    public void setKeyStorePassword(String keyStorePassword) {
-        this.keyStorePassword = keyStorePassword;
-    }
-
-    public String getAppHL7PassPhrase() {
-        return appHL7PassPhrase;
-    }
-
-    public void setAppHL7PassPhrase(String disaSecretKey) {
-        this.appHL7PassPhrase = disaSecretKey;
     }
 }

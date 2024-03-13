@@ -1,29 +1,49 @@
 # HL7 tool
+
 Extract patient demographic data from epts central server in HL7 format.
 
 ## Project structure
+
 This is a maven project composed of two modules: configurer and web.
-The configurer allows admins to set encrypted configuration properties used by the web app.
-The web app is the interface for lab technicians to extract and search through patient demographic data.
+The configurer allows admins to set encrypted configuration properties used by
+the web app.
+The web app is the interface for lab technicians to extract and search through
+patient demographic data.
+Since all data is stored in an encrypted format, a keystore (`app.keyStore`)
+and password (`app.keyStore.password`) configuration parameters must be
+provided in order for the apps to function. The keyStore must contain two
+entries that are the disa secrete key and the C-Saúde secret key.
 
 ## Configurer
+
 The configurer is a spring boot application with React as the frontend.
-In order to develop the configurer, `Java 8`, `maven`, `nodejs v20` and `npm` need to be installed.
+In order to develop the configurer, `Java 8`, `maven`, `nodejs v20` and `npm`
+need to be installed.
 
-It is recommended to use [Node Version Manager](https://github.com/nvm-sh/nvm) to install nodejs.
+It is recommended to use [Node Version Manager](https://github.com/nvm-sh/nvm)
+to install nodejs.
 
-Frontend code resides in the `src/main/js` directory, and it is built using [frontend-maven-plugin](https://github.com/eirslett/frontend-maven-plugin) and bundled using [webpack](https://webpack.js.org/concepts). Build artifacts will be created in the `public/built` directory.
+Frontend code resides in the `src/main/js` directory, and it is built using
+[frontend-maven-plugin](https://github.com/eirslett/frontend-maven-plugin) and
+bundled using [webpack](https://webpack.js.org/concepts). Build artifacts will
+be created in the `public/built` directory.
 
-During development, it is necessary to watch the frontend code source directory for changes and then rebuild the project using the following command:
+During development, it is necessary to watch the frontend code source directory
+for changes and then rebuild the project using the following command:
 
 ```
 npm run watch
 ```
+
 This ensures that the application will load the latest assets.
 
-For production builds, it is only necessary to run maven as `frontend-maven-plugin` will take care of downloading and installing `nodejs` and `npm` by itselt. And then install dependencies before running the `webpack` build.
+For production builds, it is only necessary to run maven as
+`frontend-maven-plugin` will take care of downloading and installing `nodejs`
+and `npm` by itselt. And then install dependencies before running the `webpack`
+build.
 
 ## Web
-The web app is a spring boot application that allows the user to select health facilities from which to extract demographic data.
-The data is stored in an encrypted format, with the keys loaded from a keystore.
-A keystore password (`app.keyStore.password`) configuration parameter must be provided in order for the application to start.
+
+The web app is a spring boot application that allows the user to select health
+facilities from which to extract demographic data. The data is stored in an
+encrypted format, with the keys loaded from a keystore.

@@ -42,3 +42,5 @@ id_file
 
 *.war
 webapps/
+
+*.hl7

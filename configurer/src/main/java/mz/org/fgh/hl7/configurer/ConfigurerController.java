@@ -1,32 +1,20 @@
 package mz.org.fgh.hl7.configurer;
 
-import static mz.org.fgh.hl7.lib.Constants.DISA_SECRET_KEY_ALIAS;
-import static mz.org.fgh.hl7.lib.Constants.KEY_STORE_TYPE;
+import static mz.org.fgh.hl7.lib.Constants.C_SAUDE_SECRET_KEY_ALIAS;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableEntryException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import javax.validation.Valid;
 
 import org.slf4j.Logger;
@@ -41,19 +29,30 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import mz.org.fgh.hl7.lib.Base64EncoderDecoder;
+import mz.org.fgh.hl7.lib.service.HL7EncryptionService;
+import mz.org.fgh.hl7.lib.service.HL7KeyStoreException;
+import mz.org.fgh.hl7.lib.service.HL7KeyStoreService;
 
 @RestController
 public class ConfigurerController {
-
-    private static final String DISA_SECRET_KEY_CYPHER = "AES";
 
     private static final Path[] TOMCAT_WEBAPPS_DIR = new Path[] {
             Paths.get("/", "usr", "local", "tomcat", "webapps"),
             Paths.get("C:\\Program Files\\Apache Software Foundation\\Tomcat 8.5\\webapps")
     };
 
-    private Logger log = LoggerFactory.getLogger(getClass());
+    private static final Logger log = LoggerFactory.getLogger(ConfigurerController.class);
+
+    private HL7EncryptionService encryptionService;
+
+    private HL7KeyStoreService keyStoreService;
+
+    public ConfigurerController(
+            HL7EncryptionService encryptionService,
+            HL7KeyStoreService keyStoreService) {
+        this.encryptionService = encryptionService;
+        this.keyStoreService = keyStoreService;
+    }
 
     @GetMapping("/folder")
     public String getWebAppFolder() {
@@ -64,55 +63,6 @@ public class ConfigurerController {
             }
         }
         return "";
-    }
-
-    @GetMapping("/key-store")
-    public ResponseEntity<Map<String, String>> isValidKeyStore(@RequestParam String keyStorePath,
-            @RequestParam String keyStorePassword)
-            throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException,
-            UnrecoverableEntryException {
-        Path path = Paths.get(keyStorePath);
-
-        if (!Files.exists(path)) {
-            log.info("Could not find keystore {}", path);
-            return ResponseEntity.notFound().build();
-        }
-
-        KeyStore keyStore = KeyStore.getInstance(KEY_STORE_TYPE);
-
-        try (InputStream is = Files.newInputStream(path)) {
-
-            keyStore.load(is, keyStorePassword.toCharArray());
-            KeyStore.ProtectionParameter protectionParam = new KeyStore.PasswordProtection(
-                    keyStorePassword.toCharArray());
-            KeyStore.SecretKeyEntry secretKeyEntry = (KeyStore.SecretKeyEntry) keyStore
-                    .getEntry(DISA_SECRET_KEY_ALIAS, protectionParam);
-
-            // If configuring the app for the first time, the secret key might not be
-            // available, so we'll return an empty string.
-            if (secretKeyEntry == null) {
-                return ResponseEntity.ok(Collections.singletonMap(DISA_SECRET_KEY_ALIAS, ""));
-            }
-
-            SecretKey secretKey = secretKeyEntry.getSecretKey();
-            Map<String, String> map = Collections.singletonMap(DISA_SECRET_KEY_ALIAS,
-                    new String(secretKey.getEncoded()));
-            return ResponseEntity.ok(map);
-
-        } catch (NoSuchFileException e) {
-            log.info("Could not find keystore {}", path, e);
-            return ResponseEntity.notFound().build();
-        } catch (AccessDeniedException e) {
-            log.info("Could read keystore {}", path, e);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        } catch (IOException e) {
-            if (e.getCause() instanceof UnrecoverableKeyException) {
-                log.info("Wrong password for keystore {}", path, e);
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            } else {
-                throw e;
-            }
-        }
     }
 
     @GetMapping("/configuration")
@@ -132,8 +82,7 @@ public class ConfigurerController {
 
     @PostMapping("/configuration")
     public ResponseEntity<Object> configure(@RequestParam String folder, @RequestBody @Valid Configuration config,
-            BindingResult binding)
-            throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException {
+            BindingResult binding) throws IOException {
 
         if (binding.hasErrors()) {
             Map<String, String> errors = binding.getFieldErrors().stream()
@@ -141,9 +90,7 @@ public class ConfigurerController {
             return ResponseEntity.badRequest().body(errors);
         }
 
-        storeSecretKey(config);
         storeConfiguration(folder, config);
-
         return ResponseEntity.ok(config);
     }
 
@@ -168,43 +115,17 @@ public class ConfigurerController {
             // No problem, we'll look for the encrypted file
         }
 
+        String cSaudeSecretKey = new String(keyStoreService.getEntries().get(C_SAUDE_SECRET_KEY_ALIAS));
         Path encrypted = applicationProperties.resolveSibling("application.properties.enc");
-        try (InputStreamReader reader = Base64EncoderDecoder.decodeBase64ToInputStreamReader(encrypted)) {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(encryptionService.decrypt(encrypted, cSaudeSecretKey)))) {
             props.load(reader);
+        } catch (NoSuchFileException e) {
+            log.info("Could not find configuration in {}", folder, e);
+        } catch (AccessDeniedException e) {
+            log.info("Could read configuration in {}", folder, e);
         }
         return props;
-    }
-
-    /**
-     * Store disa secret key inside keystore.
-     * 
-     * @param config
-     * @throws KeyStoreException
-     * @throws IOException
-     * @throws CertificateException
-     * @throws NoSuchAlgorithmException
-     */
-    private void storeSecretKey(Configuration config)
-            throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
-        KeyStore keyStore = KeyStore.getInstance(KEY_STORE_TYPE);
-        Path path = Paths.get(config.getKeyStorePath());
-        char[] password = config.getKeyStorePassword().toCharArray();
-
-        if (Files.exists(path)) {
-            try (InputStream inStream = Files.newInputStream(path)) {
-                keyStore.load(inStream, password);
-            }
-        } else {
-            keyStore.load(null, password);
-        }
-
-        try (OutputStream outStream = Files.newOutputStream(path)) {
-            SecretKey secretKey = new SecretKeySpec(config.getAppHL7PassPhrase().getBytes(), DISA_SECRET_KEY_CYPHER);
-            KeyStore.SecretKeyEntry secretKeyEntry = new KeyStore.SecretKeyEntry(secretKey);
-            KeyStore.ProtectionParameter protectionParam = new KeyStore.PasswordProtection(password);
-            keyStore.setEntry(DISA_SECRET_KEY_ALIAS, secretKeyEntry, protectionParam);
-            keyStore.store(outStream, password);
-        }
     }
 
     /**
@@ -219,9 +140,8 @@ public class ConfigurerController {
     private void storeConfiguration(String folder, Configuration config) throws IOException {
         Properties props = loadProperties(folder);
         Path applicationProperties = Paths.get(folder, "WEB-INF", "classes", "application.properties");
-        try (BufferedWriter writer = Files
-                .newBufferedWriter(applicationProperties.resolveSibling("application.properties.enc"))) {
-            props.setProperty("app.keyStore", Paths.get(config.getKeyStorePath()).toRealPath().toString());
+        Path encryptedPath = applicationProperties.resolveSibling("application.properties.enc");
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             props.setProperty("app.username", config.getAppUsername());
             props.setProperty("app.password", config.getAppPassword());
             props.setProperty("openmrs.url", config.getOpenmrsUrl());
@@ -230,8 +150,12 @@ public class ConfigurerController {
             props.setProperty("spring.datasource.url", config.getDataSourceUrl());
             props.setProperty("spring.datasource.username", config.getDataSourceUsername());
             props.setProperty("spring.datasource.password", config.getDataSourcePassword());
-            String encryptedProps = Base64EncoderDecoder.encodePropertiesToBase64(props);
-            writer.write(encryptedProps);
+            props.store(out, null);
+            String cSaudeSecretKey = new String(keyStoreService.getEntries().get(C_SAUDE_SECRET_KEY_ALIAS));
+            encryptionService.encrypt(out, cSaudeSecretKey, encryptedPath);
+        } catch (HL7KeyStoreException e) {
+            log.error("Erro ao carregar a keyStore.", e);
+            throw e;
         }
         Files.deleteIfExists(applicationProperties);
     }
