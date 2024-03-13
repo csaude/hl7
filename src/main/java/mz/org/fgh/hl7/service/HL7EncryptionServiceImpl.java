@@ -24,14 +24,14 @@ public class HL7EncryptionServiceImpl implements HL7EncryptionService {
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray())) {
 
             String[] command = {
-                    "openssl",
-                    "enc",
-                    "-aes-256-cbc",
-                    "-md", "sha256",
-                    "-salt",
-                    "-out", donePath.toString(),
-                    "-k", passPhrase
-            };
+            	    "openssl",
+            	    "enc",
+            	    "-aes-256-cbc",
+            	    "-md", "md5",
+            	    "-salt",
+            	    "-out", donePath.toString(),
+            	    "-k", passPhrase
+            	};
 
             // Create ProcessBuilder instance with the command and its arguments
             ProcessBuilder processBuilder = new ProcessBuilder(command);
@@ -67,14 +67,17 @@ public class HL7EncryptionServiceImpl implements HL7EncryptionService {
 
     public InputStream decrypt(Path encryptedFilePath, String passPhrase) {
         try {
-            String[] command = {
-                    "openssl",
-                    "enc",
-                    "-aes-256-cbc",
-                    "-d",
-                    "-in", encryptedFilePath.toString(),
-                    "-k", passPhrase
-            };
+          
+        	String[] command = {
+        			"openssl",
+        			"enc",
+        			"-aes-256-cbc",
+        			"-md", "md5",
+        			"-salt",
+        			"-d",
+        			"-in", encryptedFilePath.toString(), 
+        			"-k", passPhrase 
+        	};
 
             // Create ProcessBuilder instance with the command
             ProcessBuilder processBuilder = new ProcessBuilder(command);
