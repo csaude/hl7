@@ -60,8 +60,6 @@ public class Hl7ServiceImpl implements Hl7Service {
 
 	private static final String HL7_EXTENSION = ".hl7.enc";
 
-	private static final String BAK_EXTENSION = ".bak";
-
 	private static final Logger log = LoggerFactory.getLogger(Hl7ServiceImpl.class.getName());
 
 	private HL7EncryptionService encryptionService;
@@ -78,18 +76,25 @@ public class Hl7ServiceImpl implements Hl7Service {
 
 	private String hl7FileName;
 
+	private String hl7HiddenFileName;
+
 	private String passPhrase;
 
-	public Hl7ServiceImpl(HL7EncryptionService encryptionService, Hl7FileGeneratorDao hl7FileGeneratorDao,
+	public Hl7ServiceImpl(
+			HL7EncryptionService encryptionService,
+			Hl7FileGeneratorDao hl7FileGeneratorDao,
 			ObjectMapper objectMapper,
 			@Value("${app.hl7.folder}") String hl7FolderName,
 			@Value("${app.hl7.filename}") String fileName,
+			@Value("${app.hl7.hidden.filename}") String hiddenFileName,
 			@Value("${app.disa.secretKey}") String passPhrase) {
+
 		this.encryptionService = encryptionService;
 		this.objectMapper = objectMapper;
 		this.hl7FileGeneratorDao = hl7FileGeneratorDao;
 		this.hl7FolderName = hl7FolderName;
 		this.hl7FileName = fileName;
+		this.hl7HiddenFileName = hiddenFileName;
 		this.passPhrase = passPhrase;
 	}
 
@@ -212,11 +217,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 			throw new AppException("hl7.search.error.not.done");
 		}
 
-		File hlfF = new File(Paths.get(hl7FolderName, hl7FileName + HL7_EXTENSION).toString());
-
-		File bakF = new File(Paths.get(hl7FolderName, hl7FileName + BAK_EXTENSION).toString());
-
-		File selectedFile = hlfF.exists() ? hlfF : bakF;
+		File selectedFile = new File(Paths.get(hl7FolderName, hl7HiddenFileName + HL7_EXTENSION).toString());
 
 		if (!selectedFile.exists()) {
 			throw new AppException("hl7.search.error.file.not.found");
