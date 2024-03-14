@@ -66,7 +66,7 @@ export default function WebappFolderStep({
         {!error && (
           <Form.Text id="passwordHelpBlock" muted>
             🛈 Caminho para a pasta da aplicação HL7 dentro da pasta webapps do
-            Tomcat
+            Tomcat®
           </Form.Text>
         )}
         {loading && <Spinner animation="border" />}
