@@ -8,9 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -21,9 +18,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -187,9 +181,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 			// Set this as the previous successfuly generated HL7 file
 			previousHl7File = hl7File;
 
-		} catch (IOException | HL7Exception | RuntimeException | InvalidKeyException | NoSuchPaddingException
-				| NoSuchAlgorithmException | InvalidAlgorithmParameterException | BadPaddingException
-				| IllegalBlockSizeException e) {
+		} catch (IOException | HL7Exception | RuntimeException e) {
 
 			log.error("Error creating hl7", e);
 
@@ -289,8 +281,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 	}
 
 	private void createHl7File(HL7FileRequest hl7FileRequest, Path filePath)
-			throws IOException, HL7Exception, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException,
-			InvalidAlgorithmParameterException, BadPaddingException, IllegalBlockSizeException {
+			throws IOException, HL7Exception {
 		log.info("createHl7File called...");
 
 		List<String> locationsByUuid = hl7FileRequest.getHealthFacilities().stream().map(Location::getUuid)
