@@ -153,10 +153,10 @@ public class ConfigurerController {
             props.store(out, null);
             String cSaudeSecretKey = new String(keyStoreService.getEntries().get(C_SAUDE_SECRET_KEY_ALIAS));
             encryptionService.encrypt(out, cSaudeSecretKey, encryptedPath);
+            Files.deleteIfExists(applicationProperties);
         } catch (HL7KeyStoreException e) {
             log.error("Erro ao carregar a keyStore.", e);
             throw e;
         }
-        Files.deleteIfExists(applicationProperties);
     }
 }

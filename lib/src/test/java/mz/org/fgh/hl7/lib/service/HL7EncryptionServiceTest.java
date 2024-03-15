@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,7 +53,7 @@ public class HL7EncryptionServiceTest {
 	}
 
 	@Test
-	public void testEncrypt() {
+	public void testEncrypt() throws IOException {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		hl7EncryptionService.encrypt(outputStream, passPhrase, hl7FilePath);
 

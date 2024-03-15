@@ -13,20 +13,20 @@ public class HL7EncryptionServiceImpl implements HL7EncryptionService {
 
     private static final Logger logger = Logger.getLogger(HL7EncryptionServiceImpl.class.getName());
 
-    public void encrypt(ByteArrayOutputStream outputStream, String passPhrase, Path donePath) {
+    public void encrypt(ByteArrayOutputStream outputStream, String passPhrase, Path donePath) throws IOException {
 
         // Convert the ByteArrayOutputStream to a ByteArrayInputStream
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray())) {
 
             String[] command = {
-            	    "openssl",
-            	    "enc",
-            	    "-aes-256-cbc",
-            	    "-md", "md5",
-            	    "-salt",
-            	    "-out", donePath.toString(),
-            	    "-k", passPhrase
-            	};
+                    "openssl",
+                    "enc",
+                    "-aes-256-cbc",
+                    "-md", "md5",
+                    "-salt",
+                    "-out", donePath.toString(),
+                    "-k", passPhrase
+            };
 
             // Create ProcessBuilder instance with the command and its arguments
             ProcessBuilder processBuilder = new ProcessBuilder(command);
@@ -49,26 +49,28 @@ public class HL7EncryptionServiceImpl implements HL7EncryptionService {
             // Print the exit code
             System.out.println("Command executed with exit code: " + exitCode);
 
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             logger.log(Level.SEVERE, "A cifra do arquivo hl7 falhou. Por favor, "
-                    + "verifique se o aplicativo OpenSSL está instalado corretamente." + e.getMessage());
-            logger.log(Level.SEVERE, "Stack trace:", e);
+                    + "verifique se o aplicativo OpenSSL está instalado corretamente.", e);
+            throw e;
+        } catch (InterruptedException e) {
+            throw new HL7EncryptionException(e);
         }
     }
 
     public InputStream decrypt(Path encryptedFilePath, String passPhrase) {
         try {
-          
-        	String[] command = {
-        			"openssl",
-        			"enc",
-        			"-aes-256-cbc",
-        			"-md", "md5",
-        			"-salt",
-        			"-d",
-        			"-in", encryptedFilePath.toString(), 
-        			"-k", passPhrase 
-        	};
+
+            String[] command = {
+                    "openssl",
+                    "enc",
+                    "-aes-256-cbc",
+                    "-md", "md5",
+                    "-salt",
+                    "-d",
+                    "-in", encryptedFilePath.toString(),
+                    "-k", passPhrase
+            };
 
             // Create ProcessBuilder instance with the command
             ProcessBuilder processBuilder = new ProcessBuilder(command);
