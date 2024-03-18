@@ -33,3 +33,14 @@ build/
 .vscode/
 
 id_file
+
+.java-version
+
+**/node/
+**/node_modules
+**/resources/**/built
+
+*.war
+webapps/
+
+*.hl7

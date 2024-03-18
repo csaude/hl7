@@ -2,9 +2,9 @@
 FROM eclipse-temurin:8-jdk-alpine as builder
 WORKDIR /opt/app
 COPY .mvn/ .mvn
-COPY mvnw pom.xml ./
+COPY mvnw ./web/pom.xml ./
 RUN --mount=type=cache,target=/root/.m2 ./mvnw dependency:go-offline
-COPY ./src ./src
+COPY ./web/src ./src
 RUN --mount=type=cache,target=/root/.m2 ./mvnw clean install
 
 FROM tomcat:8-jre8-alpine
