@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -320,6 +321,10 @@ public class Hl7ServiceImpl implements Hl7Service {
 			byteArrayOutputStream.write(footers.getBytes());
 
 			encryptionService.encrypt(byteArrayOutputStream, passPhrase, filePath);
+
+			// Create a copy of the encrypted file with a hidden filename
+			Path destinationPath = filePath.resolveSibling(".Hidden." + filePath.getFileName().toString());
+			Files.copy(filePath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
 
 			log.info("Message serialized to file {} successfully", filePath);
 		}
