@@ -12,7 +12,7 @@
 
     <groupId>mz.org.fgh.hl7</groupId>
     <artifactId>configurer</artifactId>
-    <version>1.1.2-SNAPSHOT</version>
+    <version>1.2.0-SNAPSHOT</version>
     <name>configurer</name>
     <description>Configurer for hl7 app</description>
     <packaging>jar</packaging>
