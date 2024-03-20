@@ -12,7 +12,7 @@
 
     <groupId>mz.org.fgh.hl7</groupId>
     <artifactId>web</artifactId>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.2.0</version>
     <name>web</name>
     <description>HL7 web app</description>
     <packaging>war</packaging>
@@ -105,7 +105,7 @@
         <dependency>
             <groupId>mz.org.fgh.hl7</groupId>
             <artifactId>lib</artifactId>
-            <version>1.2.0-SNAPSHOT</version>
+            <version>1.2.0</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
