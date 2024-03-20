@@ -6,12 +6,12 @@
   <parent>
     <artifactId>hl7-app</artifactId>
     <groupId>mz.org.fgh.hl7</groupId>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.2.0</version>
   </parent>
 
   <groupId>mz.org.fgh.hl7</groupId>
   <artifactId>lib</artifactId>
-  <version>1.2.0-SNAPSHOT</version>
+  <version>1.2.0</version>
   <packaging>jar</packaging>
   <name>lib</name>
 
