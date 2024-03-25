@@ -1,9 +1,11 @@
 package mz.org.fgh.hl7.lib.service;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.logging.Level;
@@ -46,8 +48,16 @@ public class HL7EncryptionServiceImpl implements HL7EncryptionService {
             // Wait for the process to finish
             int exitCode = process.waitFor();
 
-            // Print the exit code
-            System.out.println("Command executed with exit code: " + exitCode);
+            if(exitCode != 0) {
+        	BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+            
+        	System.out.println("Command executed with exit code: " + exitCode);
+        	throw new HL7EncryptionException();
+        }
 
         } catch (IOException e) {
             logger.log(Level.SEVERE, "A cifra do arquivo hl7 falhou. Por favor, "
