@@ -15,7 +15,8 @@
       <a class="btn btn-primary" th:href="@{/config}" th:text="#{hl7.nav.generate}"></a>
     </div>
 
-    <div th:if="${hl7FileFuture != null}" class="list-group">
+    <div th:if="${processingResult != null}" class="list-group">
+
       <div class="list-group-item list-group-item-action gap-3 py-3" aria-current="true">
 
         <div class="d-flex gap-2 w-100 justify-content-between">
@@ -28,17 +29,46 @@
           th:class="'health-facilities' + ${healthFacilities.isEmpty() ? ' d-none' : ''}"></p>
 
         <!--/* Processing or last modified time (Status) */-->
+        <span th:if="${!processingResult.isDone()}" data-processing>
+          <small class="opacity-75 text-nowrap">
+            <i class="spinner-grow spinner-grow-sm" role="status"></i> <span th:text="#{hl7.files.processing}"></span>
+          </small>
+        </span>
 
-        <small th:if="${!hl7FileFuture.isDone()}" class="opacity-75 text-nowrap" data-processing>
-          <i class="spinner-grow spinner-grow-sm" role="status"></i> <span th:text="#{hl7.files.processing}"></span>
-        </small>
-        <small th:if="${hl7FileFuture.isDone() && !hl7FileFuture.isCompletedExceptionally()}"
-          class="opacity-75 text-nowrap text-success">
-          <i class='bi bi-check'></i> <span
-            th:text="#{hl7.file.updated.at(${#temporals.format(hl7FileFuture.get().lastModifiedTime)})}"></span>
-        </small>
-        <small th:if="${hl7FileFuture.isCompletedExceptionally()}" class="opacity-75 text-nowrap text-danger">
-          <i class="bi bi-exclamation-triangle"></i>
+        <!--/* Completed successfully, no logs */-->
+        <div th:if="${completedSuccessfully && !processedWithErrors}">
+          <small class="opacity-75 text-nowrap text-success">
+            <i class='bi bi-check'></i> <span
+              th:text="#{hl7.file.updated.at(${#temporals.format(processingResult.get().hl7File.lastModifiedTime)})}"></span>
+          </small>
+        </div>
+
+        <!--/* Completed successfully with logs */-->
+        <div th:if="${processedWithErrors}" class="accordion accordion-flush" id="accordionFlushExample">
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne"
+                style="padding-left: 0;">
+                <small class="opacity-75 text-warning">
+                  <i class='bi bi-exclamation-triangle'></i> <span
+                    th:text="#{hl7.file.updated.at(${#temporals.format(processingResult.get().hl7File.lastModifiedTime)})}"></span>
+                </small>
+              </button>
+            </h2>
+            <div id="flush-collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                <ul class="list-group list-group-flush" th:each="error : ${processingResult.get().errorLogs}">
+                  <li class="list-group-item" th:text="${error}"></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!--/* Did not complete successfully */-->
+        <small th:if="${processingResult.isCompletedExceptionally()}" class="opacity-75 text-nowrap text-danger">
+          <i class="bi bi-x"></i>
           <span th:if="${hl7File==null}" th:text="#{hl7.files.processing.error}"></span>
           <span th:if="${hl7File!=null}"
             th:text="#{hl7.files.processing.error.previous.at(${#temporals.format(hl7File.lastModifiedTime)})}"></span>
@@ -129,13 +159,19 @@
 
         if (data.processingStatus === "PROCESSING") {
           processingFile.forEach(element => {
-            element.innerHTML = `<i class="spinner-grow spinner-grow-sm" role="status"></i> <span>${data.message}</span>`;
+            element.innerHTML = `<small><i class="spinner-grow spinner-grow-sm" role="status"></i> <span>${data.message}</span></small>`;
           });
         } else if (data.processingStatus === "DONE") {
           processingFile.forEach(element => {
             updateHealthFacilities(data.healthFacilities);
-            element.classList.add("text-success");
-            element.innerHTML = `<i class='bi bi-check'></i> <span>${data.message}</span>`;
+            // TODO: Should probably start using a propper frontend framework
+            // to build the views.
+            if (data.logs.length) {
+              element.innerHTML = logsAccordion(data.message, data.logs);
+            } else {
+              element.classList.add("text-success");
+              element.innerHTML = `<i class='bi bi-check'></i> <span>${data.message}</span>`;
+            }
           });
         } else if (data.processingStatus === "FAILED") {
           processingFile.forEach(element => {
@@ -150,6 +186,31 @@
         }
 
       }
+    }
+
+    function logsAccordion(message, logs) {
+      return `
+        <div class="accordion accordion-flush" id="accordionFlushExample">
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne"
+                  style="padding-left: 0;">
+                  <small class="opacity-75 text-warning">
+                    <i class='bi bi-exclamation-triangle'></i> <span>${message}</span>
+                  </small>
+                </button>
+              </h2>
+              <div id="flush-collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+                <div class="accordion-body">
+                  <ul class="list-group list-group-flush">
+                    ${logs.map(l => `<li class="list-group-item">${l}</li>`).join("")}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
     }
 
     /*[- https://developer.mozilla.org/en-US/docs/Web/API/setInterval#ensure_that_execution_duration_is_shorter_than_interval_frequency -]*/
