@@ -24,6 +24,7 @@ import mz.org.fgh.hl7.web.Hl7FileForm;
 import mz.org.fgh.hl7.web.model.HL7File;
 import mz.org.fgh.hl7.web.model.HL7FileRequest;
 import mz.org.fgh.hl7.web.model.Location;
+import mz.org.fgh.hl7.web.model.ProcessingResult;
 import mz.org.fgh.hl7.web.service.Hl7Service;
 import mz.org.fgh.hl7.web.service.LocationService;
 
@@ -50,7 +51,7 @@ public class ConfigController {
 
         try {
 
-            CompletableFuture<HL7File> hl7FileProcessing = hl7Service.getHl7FileFuture();
+            CompletableFuture<ProcessingResult> hl7FileProcessing = hl7Service.getProcessingResult();
             if (hl7FileProcessing != null && !hl7FileProcessing.isDone()) {
                 throw new AppException(
                         "hl7.files.processing.error.previous");

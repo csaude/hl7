@@ -25,10 +25,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 import ca.uhn.hl7v2.HL7Exception;
 import mz.org.fgh.hl7.web.dao.Hl7FileGeneratorDao;
-import mz.org.fgh.hl7.web.model.HL7File;
 import mz.org.fgh.hl7.web.model.HL7FileRequest;
 import mz.org.fgh.hl7.web.model.Location;
 import mz.org.fgh.hl7.web.model.PatientDemographic;
+import mz.org.fgh.hl7.web.model.ProcessingResult;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -80,9 +80,9 @@ public class Hl7ServiceTest {
 
         HL7FileRequest hl7FileRequest = new HL7FileRequest();
         hl7FileRequest.setHealthFacilities(Arrays.asList(location));
-        CompletableFuture<HL7File> hl7File = hl7Service.generateHl7File(hl7FileRequest);
+        CompletableFuture<ProcessingResult> hl7File = hl7Service.generateHl7File(hl7FileRequest);
 
-        LocalDateTime lastModifiedTime = hl7File.get().getLastModifiedTime();
+        LocalDateTime lastModifiedTime = hl7File.get().getHl7File().getLastModifiedTime();
 
         assertThat(hl7Exists(hl7FilePath)).isTrue();
         assertThat(lastModifiedTime).isNotNull();
@@ -100,7 +100,7 @@ public class Hl7ServiceTest {
 
         HL7FileRequest hl7FileRequest = new HL7FileRequest();
         hl7FileRequest.setHealthFacilities(Arrays.asList(location));
-        CompletableFuture<HL7File> hl7File = hl7Service.generateHl7File(hl7FileRequest);
+        CompletableFuture<ProcessingResult> hl7File = hl7Service.generateHl7File(hl7FileRequest);
 
         hl7File.get();
 
@@ -119,14 +119,14 @@ public class Hl7ServiceTest {
 
         when(hl7FileGeneratorDao.getPatientDemographicData(anyList()))
                 .thenReturn(Arrays.asList(patientDemographics));
-        CompletableFuture<HL7File> hl7File = hl7Service.generateHl7File(hl7FileRequest);
-        LocalDateTime time1 = hl7File.get().getLastModifiedTime();
+        CompletableFuture<ProcessingResult> hl7File = hl7Service.generateHl7File(hl7FileRequest);
+        LocalDateTime time1 = hl7File.get().getHl7File().getLastModifiedTime();
         assertThat(hl7Service.getHl7File().getLastModifiedTime()).isEqualTo(time1);
 
         when(hl7FileGeneratorDao.getPatientDemographicData(anyList()))
                 .thenThrow(new RuntimeException());
 
-        CompletableFuture<HL7File> hl7File2 = hl7Service.generateHl7File(hl7FileRequest);
+        CompletableFuture<ProcessingResult> hl7File2 = hl7Service.generateHl7File(hl7FileRequest);
         try {
             hl7File2.join();
         } catch (RuntimeException e) {

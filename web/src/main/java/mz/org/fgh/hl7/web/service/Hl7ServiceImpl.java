@@ -12,6 +12,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -38,12 +39,14 @@ import ca.uhn.hl7v2.parser.PipeParser;
 import ca.uhn.hl7v2.util.Hl7InputStreamMessageIterator;
 import mz.org.fgh.hl7.lib.service.HL7EncryptionService;
 import mz.org.fgh.hl7.web.AppException;
+import mz.org.fgh.hl7.web.ProcessingException;
 import mz.org.fgh.hl7.web.dao.Hl7FileGeneratorDao;
 import mz.org.fgh.hl7.web.generator.AdtMessageFactory;
 import mz.org.fgh.hl7.web.model.HL7File;
 import mz.org.fgh.hl7.web.model.HL7FileRequest;
 import mz.org.fgh.hl7.web.model.Location;
 import mz.org.fgh.hl7.web.model.PatientDemographic;
+import mz.org.fgh.hl7.web.model.ProcessingResult;
 import mz.org.fgh.hl7.web.util.Hl7Util;
 
 @Service
@@ -63,9 +66,9 @@ public class Hl7ServiceImpl implements Hl7Service {
 
 	private ObjectMapper objectMapper;
 
-	private CompletableFuture<HL7File> hl7FileFuture;
+	private CompletableFuture<ProcessingResult> processingResult;
 
-	private HL7File previousHl7File;
+	private ProcessingResult previousProcessingResult;
 
 	private String hl7FolderName;
 
@@ -121,39 +124,42 @@ public class Hl7ServiceImpl implements Hl7Service {
 			} else {
 				hl7File.setLastModifiedTime(getFileLastModifiedTime());
 			}
-			hl7FileFuture = CompletableFuture.completedFuture(hl7File);
-			previousHl7File = hl7File;
+			ProcessingResult result = new ProcessingResult();
+			result.setHl7File(hl7File);
+			result.setErrorLogs(Collections.emptyList());
+			processingResult = CompletableFuture.completedFuture(result);
+			previousProcessingResult = result;
 			if (Files.exists(processing))
 				Files.delete(processing);
 		} else if (Files.exists(processing)) {
 			Files.delete(processing);
-			hl7FileFuture = new CompletableFuture<>();
-			hl7FileFuture.completeExceptionally(new AppException("Previous HL7 file generation did not finish."));
+			processingResult = new CompletableFuture<>();
+			processingResult.completeExceptionally(new AppException("Previous HL7 file generation did not finish."));
 		}
 	}
 
 	@Override
-	public CompletableFuture<HL7File> getHl7FileFuture() {
-		return hl7FileFuture;
+	public CompletableFuture<ProcessingResult> getProcessingResult() {
+		return processingResult;
 	}
 
 	@Override
 	public HL7File getHl7File() {
 		try {
-			if (hl7FileFuture != null && hl7FileFuture.isDone() && !hl7FileFuture.isCompletedExceptionally()) {
-				return hl7FileFuture.get();
+			if (processingResult != null && processingResult.isDone() && !processingResult.isCompletedExceptionally()) {
+				return processingResult.get().getHl7File();
 			}
 		} catch (InterruptedException | ExecutionException e) {
 			throw new AppException("hl7.files.processing.error", e);
 		}
-		return previousHl7File;
+		return previousProcessingResult.getHl7File();
 	}
 
 	@Async
 	@Override
-	public CompletableFuture<HL7File> generateHl7File(HL7FileRequest hl7FileRequest) throws HL7Exception {
+	public CompletableFuture<ProcessingResult> generateHl7File(HL7FileRequest hl7FileRequest) {
 
-		if (hl7FileFuture != null && !hl7FileFuture.isDone()) {
+		if (processingResult != null && !processingResult.isDone()) {
 			throw new AppException(
 					"Previous HL7 file generation is not yet done. Cancel it if you want to start a new one.");
 		}
@@ -162,9 +168,9 @@ public class Hl7ServiceImpl implements Hl7Service {
 
 		try {
 
-			hl7FileFuture = new CompletableFuture<>();
+			processingResult = new CompletableFuture<>();
 
-			createHl7File(hl7FileRequest, filePath);
+			List<String> errorLogs = createHl7File(hl7FileRequest, filePath);
 
 			HL7File hl7File = new HL7File();
 			hl7File.setProvince(hl7FileRequest.getProvince());
@@ -177,36 +183,39 @@ public class Hl7ServiceImpl implements Hl7Service {
 			Files.deleteIfExists(serializePath);
 			objectMapper.writeValue(new File(serializePath.toString()), hl7File);
 
-			hl7FileFuture.complete(hl7File);
+			ProcessingResult result = new ProcessingResult();
+			result.setHl7File(hl7File);
+			result.setErrorLogs(errorLogs);
+			processingResult.complete(result);
 
 			// Set this as the previous successfuly generated HL7 file
-			previousHl7File = hl7File;
+			previousProcessingResult = result;
 
-		} catch (IOException | HL7Exception | RuntimeException e) {
+		} catch (IOException | RuntimeException e) {
 
 			log.error("Error creating hl7", e);
 
-			if (hl7FileFuture == null) {
-				hl7FileFuture = new CompletableFuture<>();
+			if (processingResult == null) {
+				processingResult = new CompletableFuture<>();
 			}
-			hl7FileFuture.completeExceptionally(e);
+			processingResult.completeExceptionally(e);
 
 		}
 
-		return hl7FileFuture;
+		return processingResult;
 	}
 
 	public boolean isSearchAvailable() {
-		if (previousHl7File != null) {
+		if (previousProcessingResult != null) {
 			return true;
 		} else {
-			return hl7FileFuture != null && !hl7FileFuture.isCompletedExceptionally();
+			return processingResult != null && !processingResult.isCompletedExceptionally();
 		}
 	}
 
 	public List<PatientDemographic> search(String partialNID) {
 
-		if (!hl7FileFuture.isDone()) {
+		if (!processingResult.isDone()) {
 			throw new AppException("hl7.search.error.not.done");
 		}
 
@@ -281,8 +290,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 		}
 	}
 
-	private void createHl7File(HL7FileRequest hl7FileRequest, Path filePath)
-			throws IOException, HL7Exception {
+	private List<String> createHl7File(HL7FileRequest hl7FileRequest, Path filePath) throws IOException {
 		log.info("createHl7File called...");
 
 		List<String> locationsByUuid = hl7FileRequest.getHealthFacilities().stream().map(Location::getUuid)
@@ -309,12 +317,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 			byteArrayOutputStream.write(headers.getBytes());
 
 			// we encrypt patient at a time
-			for (PatientDemographic patient : patientDemographics) {
-				ADT_A24 adtMessage = AdtMessageFactory.createMessage("A24", patient);
-				byteArrayOutputStream.write(pipeParser.encode(adtMessage).getBytes());
-				byteArrayOutputStream.write(System.getProperty("line.separator").getBytes());
-				byteArrayOutputStream.flush();
-			}
+			List<String> errorLogs = processDemographics(patientDemographics, pipeParser, byteArrayOutputStream);
 
 			String footers = "BTS|" + String.valueOf(patientDemographics.size()) + "\rFTS|1";
 
@@ -328,7 +331,31 @@ public class Hl7ServiceImpl implements Hl7Service {
 			Files.setAttribute(destinationPath, "dos:hidden", true);
 
 			log.info("Message serialized to file {} successfully", filePath);
+
+			return errorLogs;
 		}
+	}
+
+	private List<String> processDemographics(List<PatientDemographic> patientDemographics, PipeParser pipeParser,
+			ByteArrayOutputStream byteArrayOutputStream) throws IOException {
+		List<String> errorLogs = new ArrayList<>();
+		for (PatientDemographic patient : patientDemographics) {
+			try {
+				ADT_A24 adtMessage = AdtMessageFactory.createMessage("A24", patient);
+				byteArrayOutputStream.write(pipeParser.encode(adtMessage).getBytes());
+				byteArrayOutputStream.write(System.getProperty("line.separator").getBytes());
+				byteArrayOutputStream.flush();
+			} catch (HL7Exception e) {
+				String msg = patient.getPid()
+						+ ": Erro de processamento inesperado, deve contactar o administrador de sistemas.";
+				errorLogs.add(msg);
+				log.warn(msg, e);
+			} catch (ProcessingException e) {
+				errorLogs.add(e.getMessage());
+				e.printStackTrace();
+			}
+		}
+		return errorLogs;
 	}
 
 	private LocalDateTime getFileLastModifiedTime() {
