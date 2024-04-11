@@ -12,6 +12,8 @@ public class Configuration {
     @NotBlank
     private String appPassword = "";
 
+    private boolean appOpenmrsLogin = false;
+
     @NotBlank
     private String openmrsUrl = "";
 
@@ -33,6 +35,7 @@ public class Configuration {
     public void load(Properties properties) {
         appUsername = properties.getProperty("app.username");
         appPassword = properties.getProperty("app.password");
+        appOpenmrsLogin = Boolean.parseBoolean(properties.getProperty("app.openmrs.login"));
         openmrsUrl = properties.getProperty("openmrs.url");
         openmrsUsername = properties.getProperty("openmrs.username");
         openmrsPassword = properties.getProperty("openmrs.password");
@@ -103,5 +106,13 @@ public class Configuration {
 
     public void setOpenmrsUsername(String openmrsUsername) {
         this.openmrsUsername = openmrsUsername;
+    }
+
+    public boolean getAppOpenmrsLogin() {
+        return appOpenmrsLogin;
+    }
+
+    public void setAppOpenmrsLogin(boolean appOpenmrsLogin) {
+        this.appOpenmrsLogin = appOpenmrsLogin;
     }
 }
