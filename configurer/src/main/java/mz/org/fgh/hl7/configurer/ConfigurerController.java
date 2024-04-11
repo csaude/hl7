@@ -144,6 +144,7 @@ public class ConfigurerController {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             props.setProperty("app.username", config.getAppUsername());
             props.setProperty("app.password", config.getAppPassword());
+            props.setProperty("app.openmrs.login", String.valueOf(config.getAppOpenmrsLogin()));
             props.setProperty("openmrs.url", config.getOpenmrsUrl());
             props.setProperty("openmrs.username", config.getOpenmrsUsername());
             props.setProperty("openmrs.password", config.getOpenmrsPassword());
