@@ -7,6 +7,7 @@ import ca.uhn.hl7v2.HL7Exception;
 import mz.org.fgh.hl7.web.model.HL7File;
 import mz.org.fgh.hl7.web.model.HL7FileRequest;
 import mz.org.fgh.hl7.web.model.PatientDemographic;
+import mz.org.fgh.hl7.web.model.ProcessingResult;
 
 public interface Hl7Service {
     /**
@@ -14,12 +15,12 @@ public interface Hl7Service {
      * @return The generated HL7 file.
      * @throws HL7Exception
      */
-    public CompletableFuture<HL7File> generateHl7File(HL7FileRequest fileRequest) throws HL7Exception;
+    public CompletableFuture<ProcessingResult> generateHl7File(HL7FileRequest fileRequest);
 
     /**
      * @return The generated HL7 file, could be processing.
      */
-    public CompletableFuture<HL7File> getHl7FileFuture();
+    public CompletableFuture<ProcessingResult> getProcessingResult();
 
     /**
      * @return The HL7 file that was succesfully generated or null if none.
