@@ -66,12 +66,15 @@ public class SearchController {
 
     @ModelAttribute("completedSuccessfully")
     public boolean isCompletedSuccessfully() {
-        return getProcessingResult().isDone() && !getProcessingResult().isCompletedExceptionally();
+        if (getProcessingResult() != null) {
+            return getProcessingResult().isDone() && !getProcessingResult().isCompletedExceptionally();
+        }
+        return false;
     }
 
     @ModelAttribute("processedWithErrors")
     public boolean isProcessedWithErrors() throws InterruptedException, ExecutionException {
-        if (getProcessingResult().isDone()) {
+        if (getProcessingResult() != null && getProcessingResult().isDone()) {
             return !getProcessingResult().get().getErrorLogs().isEmpty();
         }
         return false;

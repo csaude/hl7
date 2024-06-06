@@ -152,7 +152,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 		} catch (InterruptedException | ExecutionException e) {
 			throw new AppException("hl7.files.processing.error", e);
 		}
-		return previousProcessingResult.getHl7File();
+		return previousProcessingResult != null ? previousProcessingResult.getHl7File() : null;
 	}
 
 	@Async
