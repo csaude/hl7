@@ -52,6 +52,10 @@ export default function WebappAuthenticationStep({
     return error instanceof ValidationError;
   }
 
+  function toggleOpenmrsLogin() {
+    onConfigurationChange({ appOpenmrsLogin: !configuration.appOpenmrsLogin });
+  }
+
   return (
     <Form
       noValidate
@@ -68,19 +72,35 @@ export default function WebappAuthenticationStep({
 
       {error && !isValidationError() && (
         <Alert variant="danger">
-          Ocorreu um erro inesperado. Se o erro persistir, consulte os logs do servidor.
+          Ocorreu um erro inesperado. Se o erro persistir, consulte os logs do
+          servidor.
         </Alert>
       )}
+
+      <Form.Group className="mb-3">
+        <Form.Switch // prettier-ignore
+          id="appOpenmrsLogin"
+          name="appOpenmrsLogin"
+          label="Login via OpenMRS"
+          checked={configuration.appOpenmrsLogin}
+          onChange={toggleOpenmrsLogin}
+        />
+        {configuration.appOpenmrsLogin}
+        <Form.Text id="passwordHelpBlock" muted>
+          🛈 Permite autenticar os utilizadores à partir do OpenMRS.
+        </Form.Text>
+      </Form.Group>
 
       <Form.Group className="mb-3">
         <Form.Label htmlFor="appUsername">Utilizador</Form.Label>
         <Form.Control
           id="appUsername"
           name="appUsername"
-          value={configuration.appUsername}
+          value={configuration.appOpenmrsLogin ? "" : configuration.appUsername}
           onChange={handleConfigurationChange}
           autoFocus
           required
+          disabled={configuration.appOpenmrsLogin}
         />
         <Form.Control.Feedback type="invalid">
           Por favor insira o utilizador.
@@ -91,9 +111,10 @@ export default function WebappAuthenticationStep({
         <PasswordFormControl
           id="appPassword"
           name="appPassword"
-          value={configuration.appPassword}
+          value={configuration.appOpenmrsLogin ? "" : configuration.appPassword}
           onChange={handleConfigurationChange}
           required
+          disabled={configuration.appOpenmrsLogin}
         />
       </Form.Group>
       <input type="submit" hidden />
