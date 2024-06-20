@@ -2,7 +2,8 @@ package mz.org.fgh.hl7.web.controller;
 
 import java.io.FileNotFoundException;
 import java.util.List;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import javax.validation.Valid;
 
@@ -20,6 +21,7 @@ import mz.org.fgh.hl7.web.SearchForm;
 import mz.org.fgh.hl7.web.model.HL7File;
 import mz.org.fgh.hl7.web.model.Location;
 import mz.org.fgh.hl7.web.model.PatientDemographic;
+import mz.org.fgh.hl7.web.model.ProcessingResult;
 import mz.org.fgh.hl7.web.service.Hl7Service;
 
 @Controller
@@ -39,7 +41,7 @@ public class SearchController {
 
     @ModelAttribute("needsNewFile")
     public boolean needsNewFile() {
-        return hl7Service.getHl7FileFuture() == null
+        return hl7Service.getProcessingResult() == null
                 && hl7Service.getHl7File() == null;
     }
 
@@ -48,9 +50,9 @@ public class SearchController {
         return hl7Service.getHl7File();
     }
 
-    @ModelAttribute("hl7FileFuture")
-    public Future<HL7File> getHl7FileFuture() {
-        return hl7Service.getHl7FileFuture();
+    @ModelAttribute("processingResult")
+    public CompletableFuture<ProcessingResult> getProcessingResult() {
+        return hl7Service.getProcessingResult();
     }
 
     @ModelAttribute("healthFacilities")
@@ -62,7 +64,23 @@ public class SearchController {
         return Location.joinLocations(hl7File.getHealthFacilities());
     }
 
-	@GetMapping
+    @ModelAttribute("completedSuccessfully")
+    public boolean isCompletedSuccessfully() {
+        if (getProcessingResult() != null) {
+            return getProcessingResult().isDone() && !getProcessingResult().isCompletedExceptionally();
+        }
+        return false;
+    }
+
+    @ModelAttribute("processedWithErrors")
+    public boolean isProcessedWithErrors() throws InterruptedException, ExecutionException {
+        if (getProcessingResult() != null && getProcessingResult().isDone()) {
+            return !getProcessingResult().get().getErrorLogs().isEmpty();
+        }
+        return false;
+    }
+
+    @GetMapping
     public String search(@Valid SearchForm searchForm,
             BindingResult bindingResult,
             Model model) throws FileNotFoundException {

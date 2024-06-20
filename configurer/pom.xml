@@ -12,7 +12,7 @@
 
     <groupId>mz.org.fgh.hl7</groupId>
     <artifactId>configurer</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.1-SNAPSHOT</version>
     <name>configurer</name>
     <description>Configurer for hl7 app</description>
     <packaging>jar</packaging>
@@ -48,7 +48,7 @@
         <dependency>
             <groupId>mz.org.fgh.hl7</groupId>
             <artifactId>lib</artifactId>
-            <version>1.2.0</version> 
+            <version>1.2.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
 

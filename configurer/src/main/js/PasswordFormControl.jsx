@@ -23,6 +23,7 @@ export default function PasswordFormControl({
   onChange,
   onBlur,
   required,
+  disabled,
 }) {
   const [hidden, setHidden] = useState(true);
   return (
@@ -39,6 +40,7 @@ export default function PasswordFormControl({
           aria-describedby={`${id}-button-addon`}
           required={required}
           autoComplete="off"
+          disabled={disabled}
         />
       ) : (
         <Form.Control
@@ -50,6 +52,7 @@ export default function PasswordFormControl({
           onBlur={onBlur}
           aria-describedby={`${id}-button-addon`}
           required={required}
+          disabled={disabled}
           autoComplete="off"
         />
       )}
@@ -57,6 +60,7 @@ export default function PasswordFormControl({
         variant="outline-secondary"
         id={`${id}-button-addon`}
         onClick={() => setHidden(!hidden)}
+        disabled={disabled}
       >
         👁
       </Button>
