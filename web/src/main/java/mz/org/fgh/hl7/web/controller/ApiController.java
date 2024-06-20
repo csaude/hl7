@@ -16,6 +16,7 @@ import org.thymeleaf.extras.java8time.util.TemporalFormattingUtils;
 
 import mz.org.fgh.hl7.web.model.HL7File;
 import mz.org.fgh.hl7.web.model.Location;
+import mz.org.fgh.hl7.web.model.ProcessingResult;
 import mz.org.fgh.hl7.web.service.Hl7Service;
 
 @RestController
@@ -39,7 +40,7 @@ public class ApiController {
     public Map<String, Object> getModifiedTime(Locale locale) throws InterruptedException, ExecutionException {
 
         Map<String, Object> hl7 = new HashMap<>();
-        CompletableFuture<HL7File> hl7File = hl7Service.getHl7FileFuture();
+        CompletableFuture<ProcessingResult> processingResult = hl7Service.getProcessingResult();
         HL7File file = hl7Service.getHl7File();
 
         String healthFacilities = file != null ? Location.joinLocations(file.getHealthFacilities()) : "";
@@ -47,13 +48,14 @@ public class ApiController {
         // Format the same as in thymeleaf
         TemporalFormattingUtils fmt = new TemporalFormattingUtils(locale, ZoneId.systemDefault());
 
-        if (hl7File.isDone() && !hl7File.isCompletedExceptionally()) {
+        if (processingResult.isDone() && !processingResult.isCompletedExceptionally()) {
             LocalDateTime modifiedAt = file.getLastModifiedTime();
             Object[] args = new Object[] { fmt.format(modifiedAt) };
             hl7.put("processingStatus", ProcessingStatus.DONE);
             hl7.put("message", messageSource.getMessage("hl7.file.updated.at", args, locale));
             hl7.put("healthFacilities", healthFacilities);
-        } else if (hl7File.isCompletedExceptionally()) {
+            hl7.put("logs", processingResult.get().getErrorLogs());
+        } else if (processingResult.isCompletedExceptionally()) {
             hl7.put("processingStatus", ProcessingStatus.FAILED);
             hl7.put("message", getFailedMessage(file, locale));
             hl7.put("healthFacilities", healthFacilities);

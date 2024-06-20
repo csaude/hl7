@@ -2,6 +2,7 @@ package mz.org.fgh.hl7.web.generator;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.logging.Logger;
@@ -14,6 +15,7 @@ import ca.uhn.hl7v2.model.v251.message.ADT_A24;
 import ca.uhn.hl7v2.model.v251.segment.MSH;
 import ca.uhn.hl7v2.model.v251.segment.PID;
 import ca.uhn.hl7v2.model.v251.segment.PV1;
+import mz.org.fgh.hl7.web.ProcessingException;
 import mz.org.fgh.hl7.web.model.PatientDemographic;
 import mz.org.fgh.hl7.web.util.Hl7Util;
 
@@ -77,7 +79,13 @@ public class OurAdtA04MessageBuilder {
 		pv1.getAdmissionType().setValue("R");
 		if (demographic.getLastConsultationDate() != null) {
 			Instant instant = demographic.getLastConsultationDate().atZone(ZoneId.systemDefault()).toInstant();
-			pv1.getAdmitDateTime().getTime().setValue(Date.from(instant));
+			try {
+				pv1.getAdmitDateTime().getTime().setValue(Date.from(instant));
+			} catch (DataTypeException e) {
+				LocalDate localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate();
+				throw new ProcessingException(
+						demographic.getPid() + ": Data da última consulta (" + localDate + ") é inválida.", e);
+			}
 		}
 	}
 
