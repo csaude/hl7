@@ -1,5 +1,7 @@
 package mz.org.fgh.hl7.configurer;
 
+import static mz.org.fgh.hl7.lib.Constants.APPLICATION_PROPERTIES_ENC;
+import static mz.org.fgh.hl7.lib.Constants.APP_CONFIG_LOCATION;
 import static mz.org.fgh.hl7.lib.Constants.C_SAUDE_SECRET_KEY_ALIAS;
 
 import java.io.BufferedReader;
@@ -35,6 +37,8 @@ import mz.org.fgh.hl7.lib.service.HL7KeyStoreService;
 
 @RestController
 public class ConfigurerController {
+
+    private static final String APPLICATION_PROPERTIES = "application.properties";
 
     private static final Path[] TOMCAT_WEBAPPS_DIR = new Path[] {
             Paths.get("/", "usr", "local", "tomcat", "webapps"),
@@ -110,22 +114,35 @@ public class ConfigurerController {
         // First try to load the unencrypted file
         try (BufferedReader reader = Files.newBufferedReader(applicationProperties)) {
             props.load(reader);
-            return props;
         } catch (IOException e) {
             // No problem, we'll look for the encrypted file
         }
 
         String cSaudeSecretKey = new String(keyStoreService.getEntries().get(C_SAUDE_SECRET_KEY_ALIAS));
-        Path encrypted = applicationProperties.resolveSibling("application.properties.enc");
+
+        // Try to load encrypted file inside deployment, overwriting already loaded
+        // properties
+        Path encPath = applicationProperties.resolveSibling(APPLICATION_PROPERTIES_ENC);
+        loadEncryptedProperties(encPath, cSaudeSecretKey, props);
+
+        // Try to load encrypted file inside app config location, overwriting already
+        // loaded
+        // properties
+        Path appConfigPath = APP_CONFIG_LOCATION.resolve(APPLICATION_PROPERTIES_ENC);
+        loadEncryptedProperties(appConfigPath, cSaudeSecretKey, props);
+
+        return props;
+    }
+
+    private void loadEncryptedProperties(Path path, String cSaudeSecretKey, Properties props) throws IOException {
         try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(encryptionService.decrypt(encrypted, cSaudeSecretKey)))) {
+                new InputStreamReader(encryptionService.decrypt(path, cSaudeSecretKey)))) {
             props.load(reader);
         } catch (NoSuchFileException e) {
-            log.info("Could not find configuration in {}", folder, e);
+            log.info("Could not find configuration in {}", path.getParent(), e);
         } catch (AccessDeniedException e) {
-            log.info("Could read configuration in {}", folder, e);
+            log.info("Could read configuration in {}", path.getParent(), e);
         }
-        return props;
     }
 
     /**
@@ -139,8 +156,9 @@ public class ConfigurerController {
      */
     private void storeConfiguration(String folder, Configuration config) throws IOException {
         Properties props = loadProperties(folder);
-        Path applicationProperties = Paths.get(folder, "WEB-INF", "classes", "application.properties");
-        Path encryptedPath = applicationProperties.resolveSibling("application.properties.enc");
+        Path applicationProperties = Paths.get(folder, "WEB-INF", "classes", APPLICATION_PROPERTIES);
+        Path encryptedPath = applicationProperties.resolveSibling(APPLICATION_PROPERTIES_ENC);
+        Path appConfigPath = APP_CONFIG_LOCATION.resolve(APPLICATION_PROPERTIES_ENC);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             props.setProperty("app.username", config.getAppUsername());
             props.setProperty("app.password", config.getAppPassword());
@@ -153,8 +171,9 @@ public class ConfigurerController {
             props.setProperty("spring.datasource.password", config.getDataSourcePassword());
             props.store(out, null);
             String cSaudeSecretKey = new String(keyStoreService.getEntries().get(C_SAUDE_SECRET_KEY_ALIAS));
-            encryptionService.encrypt(out, cSaudeSecretKey, encryptedPath);
+            encryptionService.encrypt(out, cSaudeSecretKey, appConfigPath);
             Files.deleteIfExists(applicationProperties);
+            Files.deleteIfExists(encryptedPath);
         } catch (HL7KeyStoreException e) {
             log.error("Erro ao carregar a keyStore.", e);
             throw e;
