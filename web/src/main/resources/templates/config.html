@@ -36,12 +36,17 @@
 
         <!--/* Health Facilities */-->
 
-        <label th:text="#{hl7.healthFacilities}"
-          th:class="${#fields.hasErrors('healthFacilities') ? 'form-label is-invalid': 'form-label'}"></label>
+        <div style="display: flex; gap: 10px;">
+          <label th:text="#{hl7.healthFacilities}"
+            th:class="${#fields.hasErrors('healthFacilities') ? 'form-label is-invalid': 'form-label'}"></label>
 
-        <br />
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault">
+            <label class="form-check-label" for="flexSwitchCheckDefault"><small>Todas</small></label>
+          </div>
+        </div>
 
-        <div class="row">
+        <div class="row facilities">
 
           <div th:each="partition : ${partitionedHF}" class="col">
 
@@ -57,8 +62,7 @@
           </div>
         </div>
 
-        <div th:if="${#fields.hasErrors('healthFacilities')}"
-          th:id="healthFacilitiesInvalidFeedback"
+        <div th:if="${#fields.hasErrors('healthFacilities')}" th:id="healthFacilitiesInvalidFeedback"
           th:errors="*{healthFacilities}" class="invalid-feedback"></div>
 
         <div th:if="${#lists.isEmpty(#object.district.childLocations)}">
@@ -68,13 +72,10 @@
           <br />
         </div>
 
-        <br/>
+        <br />
 
-        <button
-          th:type="submit"
-          th:disabled="${#lists.isEmpty(#object.district.childLocations)}"
-          th:text="#{hl7.submit}"
-          class="btn btn-primary"></button>
+        <button th:type="submit" th:disabled="${#lists.isEmpty(#object.district.childLocations)}"
+          th:text="#{hl7.submit}" class="btn btn-primary"></button>
 
       </form>
     </div>
@@ -83,7 +84,7 @@
   <script th:inline="javascript">
     'use strict';
 
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
       const provinceSelect = document.getElementById("province");
       const districtSelect = document.getElementById("district");
 
@@ -100,6 +101,31 @@
 
       provinceSelect.addEventListener("change", changeProvince, false);
       districtSelect.addEventListener("change", changeDistrict, false);
+
+
+      const checkboxes = document.querySelectorAll(".row.facilities input[type=checkbox]");
+      const allSwitch = document.querySelector("#flexSwitchCheckDefault");
+
+      const allChecked = Array.from(checkboxes).every(c => c.checked);
+      if (allChecked) {
+        allSwitch.checked = true;
+      }
+
+      checkboxes.forEach((c) =>
+        c.addEventListener("click", ev => {
+          const allChecked = Array.from(checkboxes).every(c => c.checked);
+          if (!ev.target.checked) {
+            allSwitch.checked = false;
+          } else if (allChecked) {
+            allSwitch.checked = true;
+          }
+        }));
+
+      allSwitch.addEventListener('click', (ev) => {
+        const allChecked = Array.from(checkboxes).every(c => c.checked);
+        console.log(allChecked);
+        checkboxes.forEach((c) => c.checked = !allChecked);
+      });
     });
   </script>
 </body>
