@@ -1,12 +1,16 @@
 package mz.org.fgh.hl7.web.env;
 
+import static mz.org.fgh.hl7.lib.Constants.APPLICATION_PROPERTIES_ENC;
+import static mz.org.fgh.hl7.lib.Constants.APP_CONFIG_LOCATION;
+
 import java.io.IOException;
+import java.nio.file.Path;
 
 import org.springframework.boot.context.event.ApplicationEnvironmentPreparedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.PropertySource;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 
@@ -35,18 +39,19 @@ public class EncryptedEnvironmentLoader
         HL7EncryptionServiceImpl encryptionService = new HL7EncryptionServiceImpl();
         EncryptedPropertySourceLoader loader = new EncryptedPropertySourceLoader(hl7KeyStoreService, encryptionService);
 
-        Resource path = new ClassPathResource("application.properties.enc");
-        PropertySource<?> propertySource = loadEncryptedProperties(loader, path);
+        Path path = APP_CONFIG_LOCATION.resolve(APPLICATION_PROPERTIES_ENC);
+        Resource resource = new FileSystemResource(path);
+        PropertySource<?> propertySource = loadEncryptedProperties(loader, resource);
 
         environment.getPropertySources().addFirst(propertySource);
     }
 
-    private PropertySource<?> loadEncryptedProperties(EncryptedPropertySourceLoader loader, Resource path) {
-        Assert.isTrue(path.exists(), () -> "Resource " + path + " does not exist");
+    private PropertySource<?> loadEncryptedProperties(EncryptedPropertySourceLoader loader, Resource resource) {
+        Assert.isTrue(resource.exists(), () -> "Resource " + resource + " does not exist");
         try {
-            return loader.load("custom-resource", path).get(0);
+            return loader.load("custom-resource", resource).get(0);
         } catch (IOException ex) {
-            throw new IllegalStateException("Failed to load configuration from " + path, ex);
+            throw new IllegalStateException("Failed to load configuration from " + resource, ex);
         }
     }
 }
