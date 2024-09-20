@@ -1,6 +1,6 @@
 {
   "name": "configurer",
-  "version": "1.3.0",
+  "version": "1.3.0-SNAPSHOT",
   "description": "Configurer for hl7 app",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
