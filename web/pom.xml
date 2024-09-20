@@ -10,7 +10,7 @@
 
     <groupId>mz.org.fgh.hl7</groupId>
     <artifactId>web</artifactId>
-    <version>1.9.0</version>
+    <version>1.9.1-SNAPSHOT</version>
     <name>web</name>
     <description>HL7 web app</description>
     <packaging>war</packaging>
@@ -103,7 +103,7 @@
         <dependency>
             <groupId>mz.org.fgh.hl7</groupId>
             <artifactId>lib</artifactId>
-            <version>1.9.0</version>
+            <version>1.9.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -149,8 +149,4 @@
             </plugin>
         </plugins>
     </build>
-
-  <scm>
-    <tag>v1.9.0</tag>
-  </scm>
 </project>
