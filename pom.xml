@@ -16,7 +16,7 @@
 	</properties>
 
 	<scm>
-		<developerConnection>scm:git:git@github.com:csaude/disa.git</developerConnection>
+		<developerConnection>scm:git:git@github.com:csaude/hl7.git</developerConnection>
 	</scm>
 
 	<build>
