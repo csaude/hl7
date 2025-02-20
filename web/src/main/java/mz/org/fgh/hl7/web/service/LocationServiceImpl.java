@@ -36,6 +36,7 @@ public class LocationServiceImpl implements LocationService {
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(baseUrl)
                 .pathSegment("ws", "rest", "v1");
 
+
         this.webClient = webClientBuilder
                 .baseUrl(baseUrl)
                 .uriBuilderFactory(new DefaultUriBuilderFactory(builder))

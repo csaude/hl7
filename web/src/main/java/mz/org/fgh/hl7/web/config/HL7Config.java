@@ -7,7 +7,10 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
@@ -18,6 +21,7 @@ import mz.org.fgh.hl7.lib.service.HL7EncryptionServiceImpl;
 @Configuration
 @EnableAsync
 @EnableCaching
+@EnableScheduling
 public class HL7Config {
 
     @Bean
@@ -40,6 +44,10 @@ public class HL7Config {
         SessionLocaleResolver slr = new SessionLocaleResolver();
         slr.setDefaultLocale(new Locale("pt"));
         return slr;
+    }
+    @Bean
+    public TaskScheduler taskScheduler() {
+        return new ConcurrentTaskScheduler(); // Or any other TaskScheduler implementation
     }
 
     @Bean

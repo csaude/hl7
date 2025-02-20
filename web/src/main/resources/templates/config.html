@@ -74,8 +74,32 @@
 
         <br />
 
+        <!-- HL7 File Generation Configuration -->
+        <div class="mb-3 border rounded p-3 bg-light">
+          <h5>Configuração da Agenda</h5>
+          <div class="row mb-3">
+            <!-- Frequency Selection -->
+            <div class="col-sm-6">
+              <label for="frequency" class="form-label">Frequência</label>
+              <select id="frequency" name="frequency" class="form-select">
+                <option value="5" th:selected="${frequency == 5}">5 dias</option>
+                <option value="10" th:selected="${frequency == 10}">10 dias</option>
+                <option value="15" th:selected="${frequency == 15}">15 dias</option>
+                <option value="30" th:selected="${frequency == 30}">30 dias</option>
+              </select>
+            </div>
+            <!-- Time Selection -->
+            <div class="col-sm-6">
+              <label for="generationTime" class="form-label">Hora</label>
+              <input type="time" id="generationTime" name="generationTime" class="form-control" th:value="${generationTime}"/>
+            </div>
+          </div>
+        </div>
+
+
         <button th:type="submit" th:disabled="${#lists.isEmpty(#object.district.childLocations)}"
           th:text="#{hl7.submit}" class="btn btn-primary"></button>
+
 
       </form>
     </div>
