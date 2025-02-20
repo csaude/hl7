@@ -1,5 +1,6 @@
 package mz.org.fgh.hl7.web;
 
+import java.time.LocalTime;
 import java.util.List;
 
 import javax.validation.constraints.NotNull;
@@ -18,4 +19,7 @@ public class Hl7FileForm {
     @NotNull(message = "{hl7.validation.fileform.healthFacilities.Size.message}")
     @Size(min = 1, message = "{hl7.validation.fileform.healthFacilities.Size.message}")
     private List<Location> healthFacilities;
+
+    private int frequency;
+    private String generationTime;
 }

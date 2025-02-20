@@ -1,14 +1,18 @@
 package mz.org.fgh.hl7.web.controller;
 
 import java.io.IOException;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import javax.validation.Valid;
 
+import mz.org.fgh.hl7.web.service.SchedulerConfigService;
 import org.apache.commons.collections4.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -37,10 +41,12 @@ public class ConfigController {
 
     private Hl7Service hl7Service;
     private LocationService locationService;
+    private SchedulerConfigService schedulerConfigService;
 
-    public ConfigController(Hl7Service hl7Service, LocationService locationService) {
+    public ConfigController(Hl7Service hl7Service, LocationService locationService, SchedulerConfigService schedulerConfigService) {
         this.hl7Service = hl7Service;
         this.locationService = locationService;
+        this.schedulerConfigService = schedulerConfigService;
     }
 
     @GetMapping
@@ -49,8 +55,14 @@ public class ConfigController {
             Model model,
             RedirectAttributes redirectAttrs) {
 
-        try {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        LOG.debug("Authentication: {}", authentication);
+        if (authentication != null) {
+            LOG.debug("Principal: {}", authentication.getPrincipal());
+        }
 
+
+        try {
             CompletableFuture<ProcessingResult> hl7FileProcessing = hl7Service.getProcessingResult();
             if (hl7FileProcessing != null && !hl7FileProcessing.isDone()) {
                 throw new AppException(
@@ -66,6 +78,13 @@ public class ConfigController {
                 hl7FileForm.setHealthFacilities(hl7File.getHealthFacilities());
             }
             setAllProvinces(hl7FileForm, model);
+
+            int frequency = schedulerConfigService.getFrequency();
+            LocalTime generationTime = schedulerConfigService.getGenerationTime();
+
+            model.addAttribute("frequency", frequency);
+            model.addAttribute("generationTime", generationTime);
+
         } catch (AppException e) {
             LOG.error(e.getMessage(), e);
             redirectAttrs.addFlashAttribute(Alert.danger(e.getMessage()));
@@ -85,12 +104,22 @@ public class ConfigController {
             return newHL7Form(hl7FileForm, model, redirectAttrs);
         }
 
-        HL7FileRequest req = new HL7FileRequest();
-        req.setProvince(hl7FileForm.getProvince());
-        req.setDistrict(hl7FileForm.getDistrict());
-        req.setHealthFacilities(hl7FileForm.getHealthFacilities());
-        hl7Service.generateHl7File(req);
+        // Get current values from config
+        int currentFrequency = schedulerConfigService.getFrequency();
+        LocalTime currentGenerationTime = schedulerConfigService.getGenerationTime();
 
+        // Get new values from form
+        int newFrequency = hl7FileForm.getFrequency();
+        LocalTime newGenerationTime = LocalTime.parse(hl7FileForm.getGenerationTime());
+
+        // Check if values changed
+        if (newFrequency != currentFrequency || !newGenerationTime.equals(currentGenerationTime)) {
+            schedulerConfigService.updateConfig(newFrequency, newGenerationTime);
+        }
+
+        schedulerConfigService.scheduledTask(hl7FileForm);
+
+        //Not yours
         // ConfigController.previousHl7FileForm = hl7FileForm;
 
         redirectAttrs.addFlashAttribute(Alert.success("hl7.schedule.success"));
