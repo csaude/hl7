@@ -84,7 +84,6 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         // Calculate the delay until the next task execution
         long delay = calculateDelay();
         LOG.info(String.valueOf("Next scheduled execution:" + new Date(System.currentTimeMillis() + delay)));
-//        long delay = 120 * 1000;
 
         // Schedule the new task
         scheduledFuture = taskScheduler.schedule(  () -> scheduledTask(null), new Date(System.currentTimeMillis() + delay));
