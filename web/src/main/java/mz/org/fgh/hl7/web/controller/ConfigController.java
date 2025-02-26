@@ -19,6 +19,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import ca.uhn.hl7v2.HL7Exception;
@@ -43,10 +44,15 @@ public class ConfigController {
     private LocationService locationService;
     private SchedulerConfigService schedulerConfigService;
 
-    public ConfigController(Hl7Service hl7Service, LocationService locationService, SchedulerConfigService schedulerConfigService) {
+    private WebClient webClient;
+
+    private static final String TARGET_API_URL = "http://localhost:8081/api/demographics/generate";
+
+    public ConfigController(Hl7Service hl7Service, LocationService locationService, SchedulerConfigService schedulerConfigService, WebClient webClient) {
         this.hl7Service = hl7Service;
         this.locationService = locationService;
         this.schedulerConfigService = schedulerConfigService;
+        this.webClient = webClient;
     }
 
     @GetMapping
@@ -104,23 +110,7 @@ public class ConfigController {
             return newHL7Form(hl7FileForm, model, redirectAttrs);
         }
 
-        // Get current values from config
-        int currentFrequency = schedulerConfigService.getFrequency();
-        LocalTime currentGenerationTime = schedulerConfigService.getGenerationTime();
-
-        // Get new values from form
-        int newFrequency = hl7FileForm.getFrequency();
-        LocalTime newGenerationTime = LocalTime.parse(hl7FileForm.getGenerationTime());
-
-        // Check if values changed
-        if (newFrequency != currentFrequency || !newGenerationTime.equals(currentGenerationTime)) {
-            schedulerConfigService.updateConfig(newFrequency, newGenerationTime);
-        }
-
         schedulerConfigService.scheduledTask(hl7FileForm);
-
-        //Not yours
-        // ConfigController.previousHl7FileForm = hl7FileForm;
 
         redirectAttrs.addFlashAttribute(Alert.success("hl7.schedule.success"));
         return "redirect:/search";
