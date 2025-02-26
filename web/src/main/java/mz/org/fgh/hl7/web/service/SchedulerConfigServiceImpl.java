@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
@@ -33,9 +34,14 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
 
     private Hl7Service hl7Service;
 
-    public SchedulerConfigServiceImpl(TaskScheduler taskScheduler, Hl7Service hl7Service) {
+    private WebClient webClient;
+
+    private static final String TARGET_API_URL = "http://localhost:8081/api/demographics/generate";
+
+    public SchedulerConfigServiceImpl(TaskScheduler taskScheduler, Hl7Service hl7Service, WebClient webClient) {
         this.taskScheduler = taskScheduler;
         this.hl7Service = hl7Service;
+        this.webClient = webClient;
         loadConfig(); // Load on startup
     }
 
@@ -119,18 +125,42 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
     }
 
     public void scheduledTask(Hl7FileForm hl7FileForm) {
+        // Get current values from config
         int frequency = getFrequency();
         LocalTime generationTime = getGenerationTime();
+
+        // Get new values from form
+        int newFrequency = hl7FileForm.getFrequency();
+        LocalTime newGenerationTime = LocalTime.parse(hl7FileForm.getGenerationTime());
+
+        // Check if values changed
+        if (newFrequency != frequency || !newGenerationTime.equals(generationTime)) {
+            updateConfig(newFrequency, newGenerationTime);
+        }
+
         LOG.info("Scheduled task running. Frequency: " + frequency + " days, Time: " + generationTime);
 
         // Generate HL7 File
         HL7File hl7File = hl7Service.getHl7File();
-        HL7FileRequest req = new HL7FileRequest();
-        req.setProvince(hl7FileForm != null ? hl7FileForm.getProvince() : hl7File.getProvince());
-        req.setDistrict(hl7FileForm != null ? hl7FileForm.getDistrict() : hl7File.getDistrict());
-        req.setHealthFacilities(hl7FileForm!= null ? hl7FileForm.getHealthFacilities() : hl7File.getHealthFacilities());
 
-        hl7Service.generateHl7File(req);
+        if (hl7FileForm == null) {
+            hl7FileForm = new Hl7FileForm();
+        }
+
+        // Assign values with fallback to `hl7File`
+        hl7FileForm.setProvince(hl7FileForm.getProvince() != null ? hl7FileForm.getProvince() : hl7File.getProvince());
+        hl7FileForm.setDistrict(hl7FileForm.getDistrict() != null ? hl7FileForm.getDistrict() : hl7File.getDistrict());
+        hl7FileForm.setHealthFacilities(hl7FileForm.getHealthFacilities() != null ? hl7FileForm.getHealthFacilities() : hl7File.getHealthFacilities());
+
+        webClient.post()
+                .uri(TARGET_API_URL)
+                .bodyValue(hl7FileForm)
+                .retrieve()
+                .bodyToMono(String.class)
+                .doOnSubscribe(sub -> LOG.info("📡 Sending request to " + TARGET_API_URL))
+                .doOnSuccess(response -> LOG.info("✅ Response: " + response))
+                .doOnError(error -> LOG.error("❌ Error: " + error.getMessage()))
+                .subscribe();
 
         LOG.info("HL7 file is being generated");
 
