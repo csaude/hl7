@@ -11,6 +11,7 @@ import mz.org.fgh.hl7.web.service.SchedulerConfigService;
 import org.apache.commons.collections4.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -43,10 +44,7 @@ public class ConfigController {
     private Hl7Service hl7Service;
     private LocationService locationService;
     private SchedulerConfigService schedulerConfigService;
-
     private WebClient webClient;
-
-    private static final String TARGET_API_URL = "http://localhost:8081/api/demographics/generate";
 
     public ConfigController(Hl7Service hl7Service, LocationService locationService, SchedulerConfigService schedulerConfigService, WebClient webClient) {
         this.hl7Service = hl7Service;

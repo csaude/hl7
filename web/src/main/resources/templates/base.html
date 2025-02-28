@@ -33,6 +33,10 @@
               th:href="@{/config}" th:text="#{hl7.nav.generate}"></a>
           </li>
           <li class="nav-item">
+            <a th:class="'nav-link' + (${#strings.contains(requestUri, '/file')} ? ' active' : '')"
+               th:href="@{/file}" th:text="#{hl7.nav.file}"></a>
+          </li>
+          <li class="nav-item">
             <a th:class="'nav-link' + (${#strings.contains(requestUri, '/about')} ? ' active' : '')" th:href="@{/about}"
               th:text="#{hl7.nav.help}"></a>
           </li>
