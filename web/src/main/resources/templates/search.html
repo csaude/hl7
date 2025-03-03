@@ -39,7 +39,7 @@
         <div th:if="${completedSuccessfully && !processedWithErrors}">
           <small class="opacity-75 text-nowrap text-success">
             <i class='bi bi-check'></i> <span
-              th:text="#{hl7.file.updated.at(${#temporals.format(processingResult.get().hl7File.lastModifiedTime)})}"></span>
+              th:text="#{hl7.file.updated.at(${#temporals.format(lastRunTime)})}"></span>
           </small>
         </div>
 

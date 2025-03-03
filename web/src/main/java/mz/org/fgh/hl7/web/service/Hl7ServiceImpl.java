@@ -358,7 +358,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 		return errorLogs;
 	}
 
-	private LocalDateTime getFileLastModifiedTime() {
+	public LocalDateTime getFileLastModifiedTime() {
 		try {
 			Path path = Paths.get(hl7FolderName, hl7FileName + HL7_EXTENSION);
 			BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
