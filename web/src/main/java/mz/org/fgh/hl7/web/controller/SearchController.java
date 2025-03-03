@@ -1,12 +1,15 @@
 package mz.org.fgh.hl7.web.controller;
 
 import java.io.FileNotFoundException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import javax.validation.Valid;
 
+import mz.org.fgh.hl7.web.model.*;
+import mz.org.fgh.hl7.web.service.SchedulerConfigService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.ObjectUtils;
@@ -18,10 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import mz.org.fgh.hl7.web.Alert;
 import mz.org.fgh.hl7.web.AppException;
 import mz.org.fgh.hl7.web.SearchForm;
-import mz.org.fgh.hl7.web.model.HL7File;
-import mz.org.fgh.hl7.web.model.Location;
-import mz.org.fgh.hl7.web.model.PatientDemographic;
-import mz.org.fgh.hl7.web.model.ProcessingResult;
 import mz.org.fgh.hl7.web.service.Hl7Service;
 
 @Controller
@@ -29,9 +28,11 @@ import mz.org.fgh.hl7.web.service.Hl7Service;
 public class SearchController {
 
     private Hl7Service hl7Service;
+    private SchedulerConfigService config;
 
-    public SearchController(Hl7Service hl7Service) {
+    public SearchController(Hl7Service hl7Service, SchedulerConfigService config) {
         this.hl7Service = hl7Service;
+        this.config = config;
     }
 
     @ModelAttribute("searchAvailable")
@@ -53,6 +54,11 @@ public class SearchController {
     @ModelAttribute("processingResult")
     public CompletableFuture<ProcessingResult> getProcessingResult() {
         return hl7Service.getProcessingResult();
+    }
+
+    @ModelAttribute("lastRunTime")
+    public LocalDateTime getLastRunTime() {
+        return config.getLastRunTime();
     }
 
     @ModelAttribute("healthFacilities")

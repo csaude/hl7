@@ -3,18 +3,14 @@ package mz.org.fgh.hl7.web.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import mz.org.fgh.hl7.web.Hl7FileForm;
-import mz.org.fgh.hl7.web.controller.ConfigController;
 import mz.org.fgh.hl7.web.model.HL7File;
-import mz.org.fgh.hl7.web.model.HL7FileRequest;
 import mz.org.fgh.hl7.web.model.Scheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
@@ -62,6 +58,10 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         return config.getGenerationTime();
     }
 
+    public LocalDateTime getLastRunTime() {
+        return config.getLastRunTime();
+    }
+
     // Reload config if the file changes
     public void reloadConfig() {
         loadConfig();
@@ -89,6 +89,7 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
 
         // Calculate the delay until the next task execution
         long delay = calculateDelay();
+//        long delay = 1600;
         LOG.info(String.valueOf("Next scheduled execution:" + new Date(System.currentTimeMillis() + delay)));
 
         // Schedule the new task

@@ -37,16 +37,16 @@ public class FileController {
     private String hl7GeneratedFilesAPI;
     private String hl7DownloadFileAPI;
     private String hl7DefaultDownloadFolder;
-    private String hl7FileName;
+    private String hl7StandardName;
     private String hl7HiddenFileName;
 
-    public FileController(Hl7Service hl7Service, WebClient webClient, @Value("${hl7.file.name}") String hl7FileName, @Value("${hl7.hidden.file.name}") String hl7HiddenFileName, @Value("${hl7.default.download.folder}") String hl7DefaultDownloadFolder,  @Value("${hl7.generatedHl7Files.api}") String hl7GeneratedFilesAPI, @Value("${hl7.downloadFile.api}") String hl7DownloadFileAPI) {
+    public FileController(Hl7Service hl7Service, WebClient webClient, @Value("${hl7.hidden.file.name}") String hl7HiddenFileName, @Value("${hl7.default.download.folder}") String hl7DefaultDownloadFolder,  @Value("${hl7.generatedHl7Files.api}") String hl7GeneratedFilesAPI, @Value("${hl7.downloadFile.api}") String hl7DownloadFileAPI, @Value("${hl7.standard.file.name}") String hl7StandardName) {
         this.hl7Service = hl7Service;
         this.webClient = webClient;
         this.hl7GeneratedFilesAPI = hl7GeneratedFilesAPI;
         this.hl7DownloadFileAPI = hl7DownloadFileAPI;
         this.hl7DefaultDownloadFolder = hl7DefaultDownloadFolder;
-        this.hl7FileName = hl7FileName;
+        this.hl7StandardName = hl7StandardName;
         this.hl7HiddenFileName = hl7HiddenFileName;
     }
 
@@ -117,7 +117,7 @@ public class FileController {
             }
 
             // Define the save path using the constant filename
-            Path savePath = saveDirectory.resolve(hl7FileName);
+            Path savePath = saveDirectory.resolve(hl7StandardName);
 
             // Download the file
             URL url = new URL(fileUrl);
