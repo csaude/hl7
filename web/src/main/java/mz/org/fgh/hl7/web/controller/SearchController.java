@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 
 import mz.org.fgh.hl7.web.model.*;
@@ -88,11 +89,19 @@ public class SearchController {
 
     @GetMapping
     public String search(@Valid SearchForm searchForm,
-            BindingResult bindingResult,
-            Model model) throws FileNotFoundException {
+                         BindingResult bindingResult,
+                         Model model,
+                         HttpSession session  // Add this parameter
+    ) throws FileNotFoundException {
+
+        // Retrieve jobId from session
+        String jobId = (String) session.getAttribute("jobId");
+        // Check if jobId exists and add it to the model for the view
+        if (jobId != null && !jobId.isEmpty()) {
+            model.addAttribute("jobId", jobId);
+        }
 
         try {
-
             if (bindingResult.hasErrors() || ObjectUtils.isEmpty(searchForm.getPartialNid())) {
                 return "search";
             }
@@ -111,6 +120,7 @@ public class SearchController {
         }
 
         return "search";
-
     }
+
+    
 }

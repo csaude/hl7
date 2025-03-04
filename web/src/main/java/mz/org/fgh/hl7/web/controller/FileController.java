@@ -1,5 +1,7 @@
 package mz.org.fgh.hl7.web.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import mz.org.fgh.hl7.web.Alert;
 import mz.org.fgh.hl7.web.service.Hl7Service;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -144,6 +147,42 @@ public class FileController {
 
             // Redirect to the /file page with the error message
             return "redirect:/file";
+        }
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<Map<String, Object>> getJobStatus(HttpSession session) {
+        String jobId = (String) session.getAttribute("jobId");
+
+        if (jobId == null || jobId.isEmpty()) {
+            return ResponseEntity.ok(Collections.singletonMap("status", "NO_JOB"));
+        }
+
+        // Make API call to App Y to check job status
+        String jobStatusUrl = "http://localhost:8081/api/demographics/status/" + jobId;
+
+        try {
+            String resp = webClient.get()
+                    .uri(jobStatusUrl)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block(); // Blocking here because it's a REST call from the backend
+
+            Map<String, Object> response = new HashMap<>();
+
+            // Parse JSON response
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode rootNode = mapper.readTree(resp);
+
+            // Extract the status attribute
+            String status = rootNode.get("status").asText();
+
+            response.put("status", status);
+            response.put("jobId", jobId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("error", "Failed to fetch job status"));
         }
     }
 }

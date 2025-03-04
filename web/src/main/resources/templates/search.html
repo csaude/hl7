@@ -28,18 +28,12 @@
         <p th:text="${healthFacilities}"
           th:class="'health-facilities' + ${healthFacilities.isEmpty() ? ' d-none' : ''}"></p>
 
-        <!--/* Processing or last modified time (Status) */-->
-        <span th:if="${!processingResult.isDone()}" data-processing>
-          <small class="opacity-75 text-nowrap">
-            <i class="spinner-grow spinner-grow-sm" role="status"></i> <span th:text="#{hl7.files.processing}"></span>
-          </small>
-        </span>
 
-        <!--/* Completed successfully, no logs */-->
-        <div th:if="${completedSuccessfully && !processedWithErrors}">
-          <small class="opacity-75 text-nowrap text-success">
-            <i class='bi bi-check'></i> <span
-              th:text="#{hl7.file.updated.at(${#temporals.format(lastRunTime)})}"></span>
+        <!-- Add this where you want to display the job status -->
+        <div id="job-status-container" th:attr="data-job-id=${jobId}" th:if="${jobId != null}">
+          <!-- Initial loading state -->
+          <small class="opacity-75 text-nowrap">
+            <i class="spinner-grow spinner-grow-sm" role="status"></i> <span th:text="#{hl7.files.processing}"> </span>
           </small>
         </div>
 
@@ -143,33 +137,75 @@
 
     let timeout = null;
 
-    function updateHealthFacilities(healthFacilities) {
-      const hf = document.querySelectorAll(".health-facilities");
-      hf.forEach(element => {
-        element.innerText = healthFacilities;
-        element.classList.remove("d-none");
-      });
+      document.addEventListener("DOMContentLoaded", function () {
+      const jobStatusContainer = document.getElementById("job-status-container");
+      const jobId = jobStatusContainer?.getAttribute("data-job-id");
+
+      if (jobId) {
+      checkJobStatus(jobId);
     }
 
-    async function updateHl7Status() {
-      const processingFile = document.querySelectorAll("[data-processing]");
-      if (processingFile.length) {
-        const response = await fetch("api");
-        const data = await response.json();
+      function checkJobStatus(jobId) {
+      fetch("/file/status")
+      .then(response => response.json())
+      .then(data => {
 
-        if (data.processingStatus === "PROCESSING") {
-          processingFile.forEach(element => {
-            element.innerHTML = `<small><i class="spinner-grow spinner-grow-sm" role="status"></i> <span>${data.message}</span></small>`;
-          });
-        } else if (data.processingStatus === "DONE") {
-          processingFile.forEach(element => {
-            updateHealthFacilities(data.healthFacilities);
-            // TODO: Should probably start using a propper frontend framework
-            // to build the views.
-            if (data.logs.length) {
-              element.innerHTML = logsAccordion(data.message, data.logs);
-            } else {
-              element.classList.add("text-success");
+      if (data.status === "COMPLETED") {
+        jobStatusContainer.innerHTML = `
+            <small class="opacity-75 text-nowrap text-success">
+                <i class="bi bi-check"></i>
+                <span>Actualizado em ${formatLastRunTime([[${lastRunTime}]])}</span>  <!-- Format the current date and time -->
+            </small>
+        `;
+    } else if (data.status === "FAILED") {
+      jobStatusContainer.innerHTML = `<span class="text-danger">❌ Job Failed</span>`;
+    } else {
+      setTimeout(() => checkJobStatus(jobId), 5000); // Retry every 5 seconds
+    }
+    })
+      .catch(error => console.error("Error fetching job status:", error));
+    }
+    });
+
+    // Function to format the current date and time as dd/mm/yyyy hh:mm
+    function formatLastRunTime(dateStr) {
+      var date = new Date(dateStr);
+      var day = String(date.getDate()).padStart(2, '0');
+      var month = String(date.getMonth() + 1).padStart(2, '0');  // months are 0-based
+      var year = date.getFullYear();
+      var hours = String(date.getHours()).padStart(2, '0');
+      var minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    }
+
+  function updateHealthFacilities(healthFacilities) {
+  const hf = document.querySelectorAll(".health-facilities");
+  hf.forEach(element => {
+  element.innerText = healthFacilities;
+  element.classList.remove("d-none");
+  });
+  }
+
+  async function updateHl7Status() {
+  const processingFile = document.querySelectorAll("[data-processing]");
+  if (processingFile.length) {
+  const response = await fetch("api");
+  const data = await response.json();
+
+  if (data.processingStatus === "PROCESSING") {
+  processingFile.forEach(element => {
+  element.innerHTML = `<small><i class="spinner-grow spinner-grow-sm" role="status"></i>
+    <span>${data.message}</span></small>`;
+  });
+  } else if (data.processingStatus === "DONE") {
+  processingFile.forEach(element => {
+  updateHealthFacilities(data.healthFacilities);
+  // TODO: Should probably start using a propper frontend framework
+  // to build the views.
+  if (data.logs.length) {
+  element.innerHTML = logsAccordion(data.message, data.logs);
+  } else {
+  element.classList.add("text-success");
               element.innerHTML = `<i class='bi bi-check'></i> <span>${data.message}</span>`;
             }
           });

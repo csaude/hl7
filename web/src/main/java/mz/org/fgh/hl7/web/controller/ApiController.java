@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import mz.org.fgh.hl7.web.service.SchedulerConfigService;
 import org.springframework.context.MessageSource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,11 +30,14 @@ public class ApiController {
 
     private Hl7Service hl7Service;
 
+    private SchedulerConfigService config;
+
     private MessageSource messageSource;
 
-    public ApiController(Hl7Service hl7Service, MessageSource messageSource) {
+    public ApiController(Hl7Service hl7Service, MessageSource messageSource, SchedulerConfigService config) {
         this.hl7Service = hl7Service;
         this.messageSource = messageSource;
+        this.config = config;
     }
 
     @GetMapping

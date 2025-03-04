@@ -5,6 +5,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 
 import mz.org.fgh.hl7.web.service.SchedulerConfigService;
@@ -102,13 +103,23 @@ public class ConfigController {
             @Valid Hl7FileForm hl7FileForm,
             BindingResult result,
             Model model,
-            RedirectAttributes redirectAttrs) throws HL7Exception, IOException {
+            RedirectAttributes redirectAttrs,
+            HttpSession session ) throws HL7Exception, IOException {
 
         if (result.hasErrors()) {
             return newHL7Form(hl7FileForm, model, redirectAttrs);
         }
 
-        schedulerConfigService.scheduledTask(hl7FileForm);
+        HL7File hl7File = hl7Service.getHl7File();
+        hl7File.setProvince(hl7FileForm.getProvince());
+        hl7File.setDistrict(hl7FileForm.getDistrict());
+        hl7File.setHealthFacilities(hl7FileForm.getHealthFacilities());
+
+        // Get JobId from the scheduledTask
+        String jobId = schedulerConfigService.scheduledTask(hl7FileForm);
+
+        // Store jobId in session
+        session.setAttribute("jobId", jobId);
 
         redirectAttrs.addFlashAttribute(Alert.success("hl7.schedule.success"));
         return "redirect:/search";

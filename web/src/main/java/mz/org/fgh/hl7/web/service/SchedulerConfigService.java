@@ -5,6 +5,7 @@ import mz.org.fgh.hl7.web.model.Scheduler;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.concurrent.ScheduledFuture;
 
 public interface SchedulerConfigService {
     public void loadConfig();
@@ -17,7 +18,9 @@ public interface SchedulerConfigService {
 
     public void updateConfig(int frequency, LocalTime generationTime);
 
-    public void scheduledTask(Hl7FileForm hl7FileForm);
+    public String scheduledTask(Hl7FileForm hl7FileForm);
+
+    public ScheduledFuture<?> getProcessingResult();
 
 
 }
