@@ -1,6 +1,7 @@
 package mz.org.fgh.hl7.web.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -39,12 +40,13 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
 
     private WebClient webClient;
 
-    private static final String TARGET_API_URL = "http://localhost:8081/api/demographics/generate";
+    private String hl7GenerateAPI;
 
-    public SchedulerConfigServiceImpl(TaskScheduler taskScheduler, Hl7Service hl7Service, WebClient webClient) {
+    public SchedulerConfigServiceImpl(TaskScheduler taskScheduler, Hl7Service hl7Service, WebClient webClient, @Value("${hl7.generate.api}") String hl7GenerateAPI) {
         this.taskScheduler = taskScheduler;
         this.hl7Service = hl7Service;
         this.webClient = webClient;
+        this.hl7GenerateAPI = hl7GenerateAPI;
         loadConfig(); // Load on startup
     }
 
@@ -177,7 +179,7 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         LOG.info("Sending request with body: " + hl7FileForm);
 
         webClient.post()
-                .uri(TARGET_API_URL)
+                .uri(hl7GenerateAPI)
                 .bodyValue(hl7FileForm)
                 .retrieve()
                 .onStatus(HttpStatus::isError, response ->
@@ -186,7 +188,7 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
                         ).then(Mono.empty()) // Don't throw an error, just log it
                 )
                 .bodyToMono(String.class)  // Mono<String>
-                .doOnSubscribe(sub -> LOG.info("📡 Sending request to " + TARGET_API_URL))
+                .doOnSubscribe(sub -> LOG.info("📡 Sending request to " + hl7GenerateAPI))
                 .doOnSuccess(response -> {
                     LOG.info("✅ Response: " + response);
                     try {
