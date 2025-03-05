@@ -7,236 +7,236 @@
 
 <body th:replace="~{base :: common_body(~{:: .content}, ~{:: script})}">
 
-  <div class="content">
+<div class="content">
 
-    <!--/* No content message */-->
-    <div th:if="${needsNewFile}" class="text-center">
-      <p th:text="#{hl7.files.empty}" class="fw-light"></p>
-      <a class="btn btn-primary" th:href="@{/config}" th:text="#{hl7.nav.generate}"></a>
-    </div>
+  <!--/* No content message */-->
+  <div th:if="${needsNewFile}" class="text-center">
+    <p th:text="#{hl7.files.empty}" class="fw-light"></p>
+    <a class="btn btn-primary" th:href="@{/config}" th:text="#{hl7.nav.generate}"></a>
+  </div>
 
-    <div th:if="${processingResult != null}" class="list-group">
+  <div th:if="${processingResult != null}" class="list-group">
 
-      <div class="list-group-item list-group-item-action gap-3 py-3" aria-current="true">
+    <div class="list-group-item list-group-item-action gap-3 py-3" aria-current="true">
 
-        <div class="d-flex gap-2 w-100 justify-content-between">
-          <div class="btn-group">
-            <!--/* TODO add refresh */-->
-          </div>
+      <div class="d-flex gap-2 w-100 justify-content-between">
+        <div class="btn-group">
+          <!--/* TODO add refresh */-->
         </div>
+      </div>
 
-        <p th:text="${healthFacilities}"
-          th:class="'health-facilities' + ${healthFacilities.isEmpty() ? ' d-none' : ''}"></p>
+      <p th:text="${healthFacilities}"
+         th:class="'health-facilities' + ${healthFacilities.isEmpty() ? ' d-none' : ''}"></p>
 
 
-        <!-- Add this where you want to display the job status -->
-        <div id="job-status-container" th:attr="data-job-id=${jobId}" th:if="${jobId != null}">
-          <!-- Initial loading state -->
-          <small class="opacity-75 text-nowrap">
-            <i class="spinner-grow spinner-grow-sm" role="status"></i> <span th:text="#{hl7.files.processing}"> </span>
-          </small>
-        </div>
-
-        <!--/* Completed successfully with logs */-->
-        <div th:if="${processedWithErrors}" class="accordion accordion-flush" id="accordionFlushExample">
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne"
-                style="padding-left: 0;">
-                <small class="opacity-75 text-warning">
-                  <i class='bi bi-exclamation-triangle'></i> <span
-                    th:text="#{hl7.file.updated.at(${#temporals.format(processingResult.get().hl7File.lastModifiedTime)})}"></span>
-                </small>
-              </button>
-            </h2>
-            <div id="flush-collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-              <div class="accordion-body">
-                <ul class="list-group list-group-flush" th:each="error : ${processingResult.get().errorLogs}">
-                  <li class="list-group-item" th:text="${error}"></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!--/* Did not complete successfully */-->
-        <small th:if="${processingResult.isCompletedExceptionally()}" class="opacity-75 text-nowrap text-danger">
-          <i class="bi bi-x"></i>
-          <span th:if="${hl7File==null}" th:text="#{hl7.files.processing.error}"></span>
-          <span th:if="${hl7File!=null}"
-            th:text="#{hl7.files.processing.error.previous.at(${#temporals.format(hl7File.lastModifiedTime)})}"></span>
+      <!-- Add this where you want to display the job status -->
+      <div id="job-status-container" th:attr="data-job-id=${jobId}" th:if="${jobId != null}">
+        <!-- Initial loading state -->
+        <small class="opacity-75 text-nowrap">
+          <i class="spinner-grow spinner-grow-sm" role="status"></i> <span th:text="#{hl7.files.processing}"> </span>
         </small>
       </div>
-    </div>
 
-    <br />
-
-    <div th:if="${searchAvailable}" class="row">
-      <div class="col-12">
-        <form th:object="${searchForm}" th:action="@{/search}" method="get" class="row row-cols-lg-auto g-3">
-          <div class="col-12">
-            <label class="visually-hidden" for="partialNid">NID</label>
-            <input type="text" th:field="*{partialNid}" th:errorclass="is-invalid" class="form-control"
-              placeholder="Nid Parcial do Paciente" aria-describedby="partialNidHelp">
-            <div th:if="${not #fields.hasErrors('partialNid')}" id="partialNidHelp" class="form-text">
-              Nid Parcial (exemplo: /2021/00001)
+      <!--/* Completed successfully with logs */-->
+      <div th:if="${processedWithErrors}" class="accordion accordion-flush" id="accordionFlushExample">
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne"
+                    style="padding-left: 0;">
+              <small class="opacity-75 text-warning">
+                <i class='bi bi-exclamation-triangle'></i> <span
+                      th:text="#{hl7.file.updated.at(${#temporals.format(processingResult.get().hl7File.lastModifiedTime)})}"></span>
+              </small>
+            </button>
+          </h2>
+          <div id="flush-collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+            <div class="accordion-body">
+              <ul class="list-group list-group-flush" th:each="error : ${processingResult.get().errorLogs}">
+                <li class="list-group-item" th:text="${error}"></li>
+              </ul>
             </div>
-            <div class="invalid-feedback" th:errors="*{partialNid}"></div>
           </div>
-          <div class="col-12">
-            <button type="submit" class="btn btn-primary">Pesquisar</button>
-          </div>
-        </form>
-
-        <br>
-
-        <div th:if="${errorMessage}" th:text="${errorMessage}" class="alert alert-primary" role="alert"></div>
-
-        <div th:if="${not #lists.isEmpty(hl7Patients)}" class="card shadow-sm my-4">
-            <div class="table-responsive">
-              <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                <tr>
-                  <th class="fw-semibold">NID</th>
-                  <th class="fw-semibold">Nome</th>
-                  <th class="fw-semibold">Sobrenome</th>
-                  <th class="fw-semibold">Apelido</th>
-                  <th class="fw-semibold">Data de Nascimento</th>
-                  <th class="fw-semibold">Sexo</th>
-                  <th class="fw-semibold">Endereço</th>
-                  <th class="fw-semibold">US</th>
-                  <th class="fw-semibold">Cidade</th>
-                  <th class="fw-semibold">Província</th>
-                  <th class="fw-semibold">Última Consulta</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="patient : ${hl7Patients}" class="border-bottom">
-                  <td>
-                    <i th:if="${patient.gender == 'M'}" class="bi bi-person me-2 text-primary"></i><span th:if="${patient.gender == 'M'}" th:text="${patient.pid}"></span>
-                    <i th:if="${patient.gender == 'F'}" class="bi bi-person me-2 text-danger"></i><span th:if="${patient.gender == 'F'}" th:text="${patient.pid}"></span>
-                  </td>
-                  <td th:text="${patient.givenName}"></td>
-                  <td th:text="${patient.middleName}"></td>
-                  <td th:text="${patient.familyName}"></td>
-                  <td th:text="${patient.birthDate}"></td>
-                  <td>
-                    <span th:if="${patient.gender == 'M'}" class="badge bg-primary bg-gradient text-white">Masculino</span>
-                    <span th:if="${patient.gender == 'F'}" class="badge bg-danger text-white">Feminino</span>
-                    <span th:if="${patient.gender != 'M' and patient.gender != 'F'}" th:text="${patient.gender}"></span>
-                  </td>
-                  <td th:text="${patient.address}"></td>
-                  <td th:text="${patient.locationName}"></td>
-                  <td th:text="${patient.countyDistrict}"></td>
-                  <td th:text="${patient.stateProvince}"></td>
-                  <td>
-              <span th:text="${#temporals.format(patient.lastConsultationDate, 'dd/MM/yyyy')}"
-                    class="badge bg-light text-dark border"></span>
-                  </td>
-                </tr>
-                </tbody>
-              </table>
-            </div>
         </div>
-
       </div>
+
+      <!--/* Did not complete successfully */-->
+      <small th:if="${processingResult.isCompletedExceptionally()}" class="opacity-75 text-nowrap text-danger">
+        <i class="bi bi-x"></i>
+        <span th:if="${hl7File==null}" th:text="#{hl7.files.processing.error}"></span>
+        <span th:if="${hl7File!=null}"
+              th:text="#{hl7.files.processing.error.previous.at(${#temporals.format(hl7File.lastModifiedTime)})}"></span>
+      </small>
     </div>
   </div>
 
-  <script th:inline="javascript">
+  <br />
 
-    let timeout = null;
+  <div th:if="${searchAvailable}" class="row">
+    <div class="col-12">
+      <form th:object="${searchForm}" th:action="@{/search}" method="get" class="row row-cols-lg-auto g-3">
+        <div class="col-12">
+          <label class="visually-hidden" for="partialNid">NID</label>
+          <input type="text" th:field="*{partialNid}" th:errorclass="is-invalid" class="form-control"
+                 placeholder="Nid Parcial do Paciente" aria-describedby="partialNidHelp">
+          <div th:if="${not #fields.hasErrors('partialNid')}" id="partialNidHelp" class="form-text">
+            Nid Parcial (exemplo: /2021/00001)
+          </div>
+          <div class="invalid-feedback" th:errors="*{partialNid}"></div>
+        </div>
+        <div class="col-12">
+          <button type="submit" class="btn btn-primary">Pesquisar</button>
+        </div>
+      </form>
 
-      document.addEventListener("DOMContentLoaded", function () {
-      const jobStatusContainer = document.getElementById("job-status-container");
-      const jobId = jobStatusContainer?.getAttribute("data-job-id");
+      <br>
 
-      if (jobId) {
+      <div th:if="${errorMessage}" th:text="${errorMessage}" class="alert alert-primary" role="alert"></div>
+
+      <div th:if="${not #lists.isEmpty(hl7Patients)}" class="card shadow-sm my-4">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+            <tr>
+              <th class="fw-semibold">NID</th>
+              <th class="fw-semibold">Nome</th>
+              <th class="fw-semibold">Sobrenome</th>
+              <th class="fw-semibold">Apelido</th>
+              <th class="fw-semibold">Data de Nascimento</th>
+              <th class="fw-semibold">Sexo</th>
+              <th class="fw-semibold">Endereço</th>
+              <th class="fw-semibold">US</th>
+              <th class="fw-semibold">Cidade</th>
+              <th class="fw-semibold">Província</th>
+              <th class="fw-semibold">Última Consulta</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="patient : ${hl7Patients}" class="border-bottom">
+              <td>
+                <i th:if="${patient.gender == 'M'}" class="bi bi-person me-2 text-primary"></i><span th:if="${patient.gender == 'M'}" th:text="${patient.pid}"></span>
+                <i th:if="${patient.gender == 'F'}" class="bi bi-person me-2 text-danger"></i><span th:if="${patient.gender == 'F'}" th:text="${patient.pid}"></span>
+              </td>
+              <td th:text="${patient.givenName}"></td>
+              <td th:text="${patient.middleName}"></td>
+              <td th:text="${patient.familyName}"></td>
+              <td th:text="${patient.birthDate}"></td>
+              <td>
+                <span th:if="${patient.gender == 'M'}" class="badge bg-primary bg-gradient text-white">Masculino</span>
+                <span th:if="${patient.gender == 'F'}" class="badge bg-danger text-white">Feminino</span>
+                <span th:if="${patient.gender != 'M' and patient.gender != 'F'}" th:text="${patient.gender}"></span>
+              </td>
+              <td th:text="${patient.address}"></td>
+              <td th:text="${patient.locationName}"></td>
+              <td th:text="${patient.countyDistrict}"></td>
+              <td th:text="${patient.stateProvince}"></td>
+              <td>
+              <span th:text="${#temporals.format(patient.lastConsultationDate, 'dd/MM/yyyy')}"
+                    class="badge bg-light text-dark border"></span>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script th:inline="javascript">
+
+  let timeout = null;
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const jobStatusContainer = document.getElementById("job-status-container");
+    const jobId = jobStatusContainer?.getAttribute("data-job-id");
+
+    if (jobId) {
       checkJobStatus(jobId);
     }
 
-      function checkJobStatus(jobId) {
+    function checkJobStatus(jobId) {
       fetch("/file/status")
-      .then(response => response.json())
-      .then(data => {
+              .then(response => response.json())
+              .then(data => {
 
-      if (data.status === "COMPLETED") {
-        jobStatusContainer.innerHTML = `
+                if (data.status === "COMPLETED") {
+                  jobStatusContainer.innerHTML = `
             <small class="opacity-75 text-nowrap text-success">
                 <i class="bi bi-check"></i>
                 <span>Actualizado em ${formatLastRunTime([[${lastRunTime}]])}</span>  <!-- Format the current date and time -->
             </small>
         `;
-    } else if (data.status === "FAILED") {
-      jobStatusContainer.innerHTML = `<span class="text-danger">❌ Job Failed</span>`;
-    } else {
-      setTimeout(() => checkJobStatus(jobId), 5000); // Retry every 5 seconds
+                } else if (data.status === "FAILED") {
+                  jobStatusContainer.innerHTML = `<span class="text-danger">❌ Job Failed</span>`;
+                } else {
+                  setTimeout(() => checkJobStatus(jobId), 5000); // Retry every 5 seconds
+                }
+              })
+              .catch(error => console.error("Error fetching job status:", error));
     }
-    })
-      .catch(error => console.error("Error fetching job status:", error));
-    }
-    });
+  });
 
-    // Function to format the current date and time as dd/mm/yyyy hh:mm
-    function formatLastRunTime(dateStr) {
-      var date = new Date(dateStr);
-      var day = String(date.getDate()).padStart(2, '0');
-      var month = String(date.getMonth() + 1).padStart(2, '0');  // months are 0-based
-      var year = date.getFullYear();
-      var hours = String(date.getHours()).padStart(2, '0');
-      var minutes = String(date.getMinutes()).padStart(2, '0');
-      return `${day}/${month}/${year} ${hours}:${minutes}`;
-    }
+  // Function to format the current date and time as dd/mm/yyyy hh:mm
+  function formatLastRunTime(dateStr) {
+    var date = new Date(dateStr);
+    var day = String(date.getDate()).padStart(2, '0');
+    var month = String(date.getMonth() + 1).padStart(2, '0');  // months are 0-based
+    var year = date.getFullYear();
+    var hours = String(date.getHours()).padStart(2, '0');
+    var minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  }
 
   function updateHealthFacilities(healthFacilities) {
-  const hf = document.querySelectorAll(".health-facilities");
-  hf.forEach(element => {
-  element.innerText = healthFacilities;
-  element.classList.remove("d-none");
-  });
+    const hf = document.querySelectorAll(".health-facilities");
+    hf.forEach(element => {
+      element.innerText = healthFacilities;
+      element.classList.remove("d-none");
+    });
   }
 
   async function updateHl7Status() {
-  const processingFile = document.querySelectorAll("[data-processing]");
-  if (processingFile.length) {
-  const response = await fetch("api");
-  const data = await response.json();
+    const processingFile = document.querySelectorAll("[data-processing]");
+    if (processingFile.length) {
+      const response = await fetch("api");
+      const data = await response.json();
 
-  if (data.processingStatus === "PROCESSING") {
-  processingFile.forEach(element => {
-  element.innerHTML = `<small><i class="spinner-grow spinner-grow-sm" role="status"></i>
+      if (data.processingStatus === "PROCESSING") {
+        processingFile.forEach(element => {
+          element.innerHTML = `<small><i class="spinner-grow spinner-grow-sm" role="status"></i>
     <span>${data.message}</span></small>`;
-  });
-  } else if (data.processingStatus === "DONE") {
-  processingFile.forEach(element => {
-  updateHealthFacilities(data.healthFacilities);
-  // TODO: Should probably start using a propper frontend framework
-  // to build the views.
-  if (data.logs.length) {
-  element.innerHTML = logsAccordion(data.message, data.logs);
-  } else {
-  element.classList.add("text-success");
-              element.innerHTML = `<i class='bi bi-check'></i> <span>${data.message}</span>`;
-            }
-          });
-        } else if (data.processingStatus === "FAILED") {
-          processingFile.forEach(element => {
-            updateHealthFacilities(data.healthFacilities);
-            element.classList.add("text-danger");
-            element.innerHTML = `<i class="bi bi-exclamation-triangle"></i> <span>${data.message}</span>`;
-          });
-        }
-
-        if (data.processingStatus === "DONE" || data.processingStatus === "FAILED") {
-          clearTimeout(timeout);
-        }
-
+        });
+      } else if (data.processingStatus === "DONE") {
+        processingFile.forEach(element => {
+          updateHealthFacilities(data.healthFacilities);
+          // TODO: Should probably start using a propper frontend framework
+          // to build the views.
+          if (data.logs.length) {
+            element.innerHTML = logsAccordion(data.message, data.logs);
+          } else {
+            element.classList.add("text-success");
+            element.innerHTML = `<i class='bi bi-check'></i> <span>${data.message}</span>`;
+          }
+        });
+      } else if (data.processingStatus === "FAILED") {
+        processingFile.forEach(element => {
+          updateHealthFacilities(data.healthFacilities);
+          element.classList.add("text-danger");
+          element.innerHTML = `<i class="bi bi-exclamation-triangle"></i> <span>${data.message}</span>`;
+        });
       }
-    }
 
-    function logsAccordion(message, logs) {
-      return `
+      if (data.processingStatus === "DONE" || data.processingStatus === "FAILED") {
+        clearTimeout(timeout);
+      }
+
+    }
+  }
+
+  function logsAccordion(message, logs) {
+    return `
         <div class="accordion accordion-flush" id="accordionFlushExample">
             <div class="accordion-item">
               <h2 class="accordion-header">
@@ -258,17 +258,17 @@
             </div>
           </div>
         `;
-    }
+  }
 
-    /*[- https://developer.mozilla.org/en-US/docs/Web/API/setInterval#ensure_that_execution_duration_is_shorter_than_interval_frequency -]*/
-    (function loop() {
-      timeout = setTimeout(() => {
-        updateHl7Status();
-        loop();
-      }, 5000);
-    })();
+  /*[- https://developer.mozilla.org/en-US/docs/Web/API/setInterval#ensure_that_execution_duration_is_shorter_than_interval_frequency -]*/
+  (function loop() {
+    timeout = setTimeout(() => {
+      updateHl7Status();
+      loop();
+    }, 5000);
+  })();
 
-  </script>
+</script>
 
 </body>
 
