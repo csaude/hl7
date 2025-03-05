@@ -37,39 +37,34 @@
                 <table class="table table-hover table-striped border">
                     <thead class="table-light">
                     <tr>
-                        <th>Nome do Ficheiro</th>
-                        <th>Data</th>
-                        <th>Unidade Sanitária</th>
-<!--                        <th>Tamanho</th>-->
-                        <th class="text-end">Acções</th>
+                        <th style="width: 40%;">Nome do Ficheiro</th>
+                        <th style="width: 10%;">Data</th>
+                        <th style="width: 30%;">Unidade Sanitária</th>
+                        <th class="text-end" style="width: 20%;">Acções</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr th:each="file : ${files}" class="align-middle">
                         <td>
-                            <i class="bi bi-file-text me-2 text-primary"></i>
+                            <i class="bi bi-file-text text-primary"></i>
                             <span th:text="${file.name}"></span>
                         </td>
                         <td>
-                                <span class="badge bg-light text-dark"
-                                      th:text="${file.date}">
-                                </span>
+                            <span class="badge bg-light text-dark" th:text="${file.date}"></span>
                         </td>
                         <td>
-                            <div class="d-flex flex-wrap gap-1">
-                                    <span th:each="hospital : ${file.hospitals}"
-                                          th:text="${hospital}"
-                                          class="badge bg-primary"></span>
+                            <div class="d-flex flex-wrap gap-1" style="max-width: 100%; white-space: normal;">
+                        <span th:each="hospital : ${file.hospitals}"
+                              th:text="${hospital}"
+                              class="badge bg-primary text-wrap"></span>
                             </div>
                         </td>
-<!--                        <td th:text="${file.size} + MB"></td>-->
                         <td class="text-end">
                             <a th:href="@{/file/download-and-save(url=${file.link})}"
                                class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-download me-1"></i>Download
                             </a>
                         </td>
-
                     </tr>
                     </tbody>
                 </table>
