@@ -151,11 +151,8 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         int newFrequency = hl7FileForm.getFrequency();
         LocalTime newGenerationTime = LocalTime.parse(hl7FileForm.getGenerationTime());
         // Check if values changed
-        if (newFrequency != frequency || !newGenerationTime.equals(generationTime)) {
+        if (newFrequency != frequency || !newGenerationTime.equals(generationTime))
             updateConfig(newFrequency, newGenerationTime);
-
-        }
-
         }
 
         LOG.info("Updated scheduled task running. Frequency: " + getFrequency() + " days, Time: " + getGenerationTime());
@@ -172,6 +169,9 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         hl7FileForm.setDistrict(hl7FileForm.getDistrict() != null ? hl7FileForm.getDistrict() : hl7File.getDistrict());
         hl7FileForm.setHealthFacilities(hl7FileForm.getHealthFacilities() != null ? hl7FileForm.getHealthFacilities() : hl7File.getHealthFacilities());
 
+
+
+
         // Create a CountDownLatch to wait for the response
         CountDownLatch latch = new CountDownLatch(1);
         final String[] jobIdResult = new String[1]; // Array to hold the result
@@ -183,16 +183,19 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
                 .bodyValue(hl7FileForm)
                 .retrieve()
                 .onStatus(HttpStatus::isError, response ->
-                        response.bodyToMono(String.class).doOnNext(body ->
-                                LOG.info("Received error response: " + body)
-                        ).then(Mono.empty()) // Don't throw an error, just log it
+                        response.bodyToMono(String.class).flatMap(body -> {
+                            LOG.error("❌ API returned error: " + body);
+                            return Mono.error(new RuntimeException("API error: " + body)); // Throw exception with details
+                        })
                 )
                 .bodyToMono(String.class)  // Mono<String>
                 .doOnSubscribe(sub -> LOG.info("📡 Sending request to " + hl7GenerateAPI))
                 .doOnSuccess(response -> {
-                    LOG.info("✅ Response: " + response);
+                    if (response == null || response.isEmpty()) {
+                        LOG.error("⚠️ Response was null or empty!");
+                        return;
+                    }
                     try {
-                        // Parse the response to get JobId
                         ObjectMapper mapper = new ObjectMapper();
                         JsonNode rootNode = mapper.readTree(response);
                         jobIdResult[0] = rootNode.get("JobId").asText();
@@ -200,7 +203,6 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
                     } catch (Exception e) {
                         LOG.error("Failed to parse response: " + e.getMessage());
                     }
-                    latch.countDown();
                 })
                 .doOnError(error -> {
                     LOG.error("❌ Error: " + error.getMessage());

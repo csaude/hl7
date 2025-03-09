@@ -1,0 +1,10 @@
+#Tue Dec 10 15:10:39 CAT 2024
+app.openmrs.login=false
+app.password=A1^hKr$E*l4@2Qj5%$2c7p\!\#i
+app.username=Admin
+openmrs.password=A1^hKr$E*l4@2Qj5%$2c7p\!\#i
+openmrs.url=openmrs.url=http\://dev.fgh.org.mz\:89/openmrs/
+openmrs.username=Admin
+spring.datasource.password=root
+spring.datasource.url=jdbc\:mysql\://127.0.0.1\:3320/openmrs
+spring.datasource.username=root

@@ -1,9 +1,14 @@
 package mz.org.fgh.hl7.web.controller;
 
+import ca.uhn.hl7v2.model.v251.segment.LOC;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import mz.org.fgh.hl7.web.Alert;
+import mz.org.fgh.hl7.web.model.HL7File;
 import mz.org.fgh.hl7.web.service.Hl7Service;
+import mz.org.fgh.hl7.web.service.Hl7ServiceImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
@@ -30,6 +35,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 
 @Controller
@@ -42,9 +49,11 @@ public class FileController {
     private String hl7FileStatusAPI;
     private String hl7DefaultDownloadFolder;
     private String hl7StandardName;
+    private String hl7MetadataName;
     private String hl7HiddenFileName;
+    private static final Logger log = LoggerFactory.getLogger(FileController.class.getName());
 
-    public FileController(Hl7Service hl7Service, WebClient webClient, @Value("${hl7.fileStatus.api}") String hl7FileStatusAPI, @Value("${hl7.hidden.file.name}") String hl7HiddenFileName, @Value("${hl7.default.download.folder}") String hl7DefaultDownloadFolder,  @Value("${hl7.generatedHl7Files.api}") String hl7GeneratedFilesAPI, @Value("${hl7.downloadFile.api}") String hl7DownloadFileAPI, @Value("${hl7.standard.file.name}") String hl7StandardName) {
+    public FileController(Hl7Service hl7Service, WebClient webClient, @Value("${hl7.fileStatus.api}") String hl7FileStatusAPI, @Value("${hl7.hidden.file.name}") String hl7HiddenFileName, @Value("${hl7.default.download.folder}") String hl7DefaultDownloadFolder,  @Value("${hl7.generatedHl7Files.api}") String hl7GeneratedFilesAPI, @Value("${hl7.downloadFile.api}") String hl7DownloadFileAPI, @Value("${hl7.standard.file.name}") String hl7StandardName, @Value("${hl7.metadata.name}") String hl7MetadataName) {
         this.hl7Service = hl7Service;
         this.webClient = webClient;
         this.hl7GeneratedFilesAPI = hl7GeneratedFilesAPI;
@@ -52,13 +61,24 @@ public class FileController {
         this.hl7FileStatusAPI = hl7FileStatusAPI;
         this.hl7DefaultDownloadFolder = hl7DefaultDownloadFolder;
         this.hl7StandardName = hl7StandardName;
+        this.hl7MetadataName = hl7MetadataName;
         this.hl7HiddenFileName = hl7HiddenFileName;
     }
 
     @GetMapping
     public String showFiles(Model model) {
-        String locationUUID = hl7Service.getHl7File().getDistrict().getUuid();
+        HL7File hl7File = hl7Service.getHl7File();
+
+        if (hl7File == null || hl7File.getDistrict() == null || hl7File.getDistrict().getUuid() == null) {
+            model.addAttribute("error", "Location information is missing.");
+            return "file"; // Return the view with an error message
+        }
+
+        String locationUUID = hl7File.getDistrict().getUuid();
+        log.info("Location UUID: " + locationUUID);
+
         String apiUrl = hl7GeneratedFilesAPI + locationUUID;
+        log.info("API URL: " + apiUrl);
 
         List<Map<String, String>> files = new ArrayList<>();
 
@@ -67,8 +87,7 @@ public class FileController {
             List<Map<String, Object>> jobs = webClient.get()
                     .uri(apiUrl)
                     .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {
-                    })
+                    .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
                     .block();
 
             // Process the response
@@ -99,11 +118,7 @@ public class FileController {
                 }
             }
         } catch (Exception e) {
-            // Log the error
-            System.err.println("Error fetching HL7 files: " + e.getMessage());
-            e.printStackTrace();
-
-            // Add empty list if there's an error
+            log.error("Error fetching HL7 files: ", e);
             model.addAttribute("error", "Failed to fetch HL7 files. Please try again later.");
         }
 
@@ -111,6 +126,7 @@ public class FileController {
         model.addAttribute("files", files);
         return "file";
     }
+
 
     @GetMapping("/download-and-save")
     public String downloadAndSave(@RequestParam("url") String fileUrl, RedirectAttributes redirectAttrs) {
@@ -121,23 +137,47 @@ public class FileController {
                 Files.createDirectories(saveDirectory);
             }
 
-            // Define the save path using the constant filename
-            Path savePath = saveDirectory.resolve(hl7StandardName);
+            // Define the save paths for both files
+            Path hl7SavePath = saveDirectory.resolve(hl7StandardName);
+            Path metadataPath = saveDirectory.resolve(hl7MetadataName);
 
-            // Download the file
+            // Temporary ZIP file path
+            Path zipPath = Files.createTempFile("download-", ".zip");
+
+            // Download the ZIP file
             URL url = new URL(fileUrl);
             try (InputStream in = url.openStream()) {
-                Files.copy(in, savePath, StandardCopyOption.REPLACE_EXISTING);
+                Files.copy(in, zipPath, StandardCopyOption.REPLACE_EXISTING);
             }
 
-            // Create a clone of the file with the hidden filename
-            Path hiddenFilePath = saveDirectory.resolve(hl7HiddenFileName);
-            Files.copy(savePath, hiddenFilePath, StandardCopyOption.REPLACE_EXISTING);
+            // Extract files from the ZIP
+            try (ZipInputStream zipIn = new ZipInputStream(Files.newInputStream(zipPath))) {
+                ZipEntry entry;
+                while ((entry = zipIn.getNextEntry()) != null) {
+                    String entryName = entry.getName();
 
-            // Make the hidden file hidden for Windows
-            if (System.getProperty("os.name").toLowerCase().contains("win")) {
-                Files.setAttribute(hiddenFilePath, "dos:hidden", true);
+                    // Determine which file we're extracting and save to appropriate path
+                    if (entryName.equals("Patient_Demographic_Data.hl7.enc")) {
+                        Files.copy(zipIn, hl7SavePath, StandardCopyOption.REPLACE_EXISTING);
+
+                        // Create a clone of the HL7 file with the hidden filename
+                        Path hiddenFilePath = saveDirectory.resolve(hl7HiddenFileName);
+                        Files.copy(hl7SavePath, hiddenFilePath, StandardCopyOption.REPLACE_EXISTING);
+
+                        // Make the hidden file hidden for Windows
+                        if (System.getProperty("os.name").toLowerCase().contains("win")) {
+                            Files.setAttribute(hiddenFilePath, "dos:hidden", true);
+                        }
+                    } else if (entryName.equals(".metadata.json")) {
+                        Files.copy(zipIn, metadataPath, StandardCopyOption.REPLACE_EXISTING);
+                    }
+
+                    zipIn.closeEntry();
+                }
             }
+
+            // Clean up the temporary ZIP file
+            Files.delete(zipPath);
 
             // Add a flash attribute with a success message
             redirectAttrs.addFlashAttribute(Alert.success("hl7.download.success"));

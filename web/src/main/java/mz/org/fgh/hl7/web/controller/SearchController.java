@@ -62,10 +62,11 @@ public class SearchController {
         return config.getLastRunTime();
     }
 
+
     @ModelAttribute("healthFacilities")
     public String getHealthFacilities() {
         HL7File hl7File = hl7Service.getHl7File();
-        if (hl7File == null) {
+        if (hl7File == null || hl7File.getHealthFacilities() == null) {
             return "";
         }
         return Location.joinLocations(hl7File.getHealthFacilities());
