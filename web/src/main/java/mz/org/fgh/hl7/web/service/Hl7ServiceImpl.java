@@ -113,6 +113,7 @@ public class Hl7ServiceImpl implements Hl7Service {
 		// Check if there is a previous processing file
 		Path processing = Paths.get(path.toString(), PROCESSING_PREFIX + hl7FileName + HL7_EXTENSION);
 		Path done = Paths.get(path.toString(), hl7FileName + HL7_EXTENSION);
+
 		// If there is a previously processed file, delete the temporary file because
 		// the previous execution did not finish.
 		if (Files.exists(done)) {
@@ -129,8 +130,9 @@ public class Hl7ServiceImpl implements Hl7Service {
 			result.setErrorLogs(Collections.emptyList());
 			processingResult = CompletableFuture.completedFuture(result);
 			previousProcessingResult = result;
-			if (Files.exists(processing))
+			if (Files.exists(processing)) {
 				Files.delete(processing);
+			}
 		} else if (Files.exists(processing)) {
 			Files.delete(processing);
 			processingResult = new CompletableFuture<>();

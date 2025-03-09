@@ -66,7 +66,6 @@ public class ConfigController {
             LOG.debug("Principal: {}", authentication.getPrincipal());
         }
 
-
         try {
             CompletableFuture<ProcessingResult> hl7FileProcessing = hl7Service.getProcessingResult();
             if (hl7FileProcessing != null && !hl7FileProcessing.isDone()) {
@@ -75,6 +74,7 @@ public class ConfigController {
             }
 
             HL7File hl7File = hl7Service.getHl7File();
+
             if (hl7File != null
                     && nullOrEquals(hl7FileForm.getProvince(), hl7File.getProvince())
                     && nullOrEquals(hl7FileForm.getDistrict(), hl7File.getDistrict())) {
@@ -82,6 +82,7 @@ public class ConfigController {
                 hl7FileForm.setDistrict(hl7File.getDistrict());
                 hl7FileForm.setHealthFacilities(hl7File.getHealthFacilities());
             }
+
             setAllProvinces(hl7FileForm, model);
 
             int frequency = schedulerConfigService.getFrequency();
@@ -89,6 +90,7 @@ public class ConfigController {
 
             model.addAttribute("frequency", frequency);
             model.addAttribute("generationTime", generationTime);
+
 
         } catch (AppException e) {
             LOG.error(e.getMessage(), e);
@@ -139,6 +141,7 @@ public class ConfigController {
 
         model.addAttribute("allProvinces", allProvinces);
         List<Location> healthFacilities = hl7FileForm.getDistrict().getChildLocations();
+
         // Divide health facility list into equal sized sublists
         model.addAttribute("partitionedHF", ListUtils.partition(healthFacilities, ROW_SIZE));
     }
