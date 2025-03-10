@@ -3,6 +3,7 @@ package mz.org.fgh.hl7.web.controller;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import javax.servlet.http.HttpSession;
@@ -118,12 +119,17 @@ public class ConfigController {
         hl7File.setHealthFacilities(hl7FileForm.getHealthFacilities());
 
         // Get JobId from the scheduledTask
-        String jobId = schedulerConfigService.scheduledTask(hl7FileForm);
+        String jobId = schedulerConfigService.scheduledTask(hl7FileForm, session);
 
-        // Store jobId in session
-        session.setAttribute("jobId", jobId);
+        if(!Objects.equals(jobId, "PROCESSING")){
+            session.setAttribute("jobId", jobId);
+            redirectAttrs.addFlashAttribute(Alert.success("hl7.schedule.success"));
 
-        redirectAttrs.addFlashAttribute(Alert.success("hl7.schedule.success"));
+        }
+        else {
+            redirectAttrs.addFlashAttribute(Alert.warning("hl7.processing.warning"));
+        }
+
         return "redirect:/search";
     }
 
