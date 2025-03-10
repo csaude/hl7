@@ -15,7 +15,7 @@
     <a class="btn btn-primary" th:href="@{/config}" th:text="#{hl7.nav.generate}"></a>
   </div>
 
-  <div th:if="${processingResult != null}" class="list-group">
+  <div class="list-group">
 
     <div class="list-group-item list-group-item-action gap-3 py-3" aria-current="true">
 
@@ -35,6 +35,7 @@
         <small class="opacity-75 text-nowrap">
           <i class="spinner-grow spinner-grow-sm" role="status"></i> <span th:text="#{hl7.files.processing}"> </span>
         </small>
+
       </div>
 
       <!--/* Completed successfully with logs */-->

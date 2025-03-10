@@ -1,6 +1,8 @@
 package mz.org.fgh.hl7.web.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import mz.org.fgh.hl7.web.controller.FileController;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,17 +13,20 @@ import mz.org.fgh.hl7.web.model.ProcessingResult;
 import mz.org.fgh.hl7.web.model.Scheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Date;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledFuture;
@@ -42,11 +47,15 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
 
     private String hl7GenerateAPI;
 
-    public SchedulerConfigServiceImpl(TaskScheduler taskScheduler, Hl7Service hl7Service, WebClient webClient, @Value("${hl7.generate.api}") String hl7GenerateAPI) {
+    @Autowired
+    private FileController fileController;
+
+    public SchedulerConfigServiceImpl(FileController fileController, TaskScheduler taskScheduler, Hl7Service hl7Service, WebClient webClient, @Value("${hl7.generate.api}") String hl7GenerateAPI) {
         this.taskScheduler = taskScheduler;
         this.hl7Service = hl7Service;
         this.webClient = webClient;
         this.hl7GenerateAPI = hl7GenerateAPI;
+        this.fileController = fileController;
         loadConfig(); // Load on startup
     }
 
@@ -77,20 +86,20 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         System.out.println("Config reloaded!");
     }
 
-    public void updateConfig(int frequency, LocalTime generationTime) {
+    public void updateConfig(int frequency, LocalTime generationTime, HttpSession httpSession) {
         config.setFrequency(frequency);
         config.setGenerationTime(generationTime);
 
         try {
             objectMapper.writeValue(new File("config.json"), config);
             LOG.info("Config updated!");
-            rescheduleTask(); // Reschedule after updating config
+            rescheduleTask(httpSession); // Reschedule after updating config
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void rescheduleTask() {
+    public void rescheduleTask(HttpSession httpSession) {
         // Cancel any existing scheduled task
         if (scheduledFuture != null && !scheduledFuture.isCancelled()) {
             scheduledFuture.cancel(false);
@@ -102,7 +111,7 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         LOG.info(String.valueOf("Next scheduled execution:" + new Date(System.currentTimeMillis() + delay)));
 
         // Schedule the new task
-        scheduledFuture = taskScheduler.schedule(  () -> scheduledTask(null), new Date(System.currentTimeMillis() + delay));
+        scheduledFuture = taskScheduler.schedule(  () -> scheduledTask(null, httpSession), new Date(System.currentTimeMillis() + delay));
     }
 
     private long calculateDelay() {
@@ -136,8 +145,18 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         return delay;
     }
 
-    public String scheduledTask(Hl7FileForm hl7FileForm) {
-        // Most of your existing scheduledTask code stays the same
+    public String scheduledTask(Hl7FileForm hl7FileForm, HttpSession session) {
+
+        // Call getJobStatus method
+        ResponseEntity<Map<String, Object>> statusResponse = fileController.getJobStatus(session);
+        Map<String, Object> statusMap = statusResponse.getBody();
+
+        // Check if there's an ongoing job
+        if (statusMap != null && "PROCESSING".equals(statusMap.get("status"))) {
+            return "PROCESSING";
+        }
+
+
         // Get current values from config
         int frequency = getFrequency();
         LocalTime generationTime = getGenerationTime();
@@ -152,7 +171,7 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         LocalTime newGenerationTime = LocalTime.parse(hl7FileForm.getGenerationTime());
         // Check if values changed
         if (newFrequency != frequency || !newGenerationTime.equals(generationTime))
-            updateConfig(newFrequency, newGenerationTime);
+            updateConfig(newFrequency, newGenerationTime, session);
         }
 
         LOG.info("Updated scheduled task running. Frequency: " + getFrequency() + " days, Time: " + getGenerationTime());
@@ -168,8 +187,6 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         hl7FileForm.setProvince(hl7FileForm.getProvince() != null ? hl7FileForm.getProvince() : hl7File.getProvince());
         hl7FileForm.setDistrict(hl7FileForm.getDistrict() != null ? hl7FileForm.getDistrict() : hl7File.getDistrict());
         hl7FileForm.setHealthFacilities(hl7FileForm.getHealthFacilities() != null ? hl7FileForm.getHealthFacilities() : hl7File.getHealthFacilities());
-
-
 
 
         // Create a CountDownLatch to wait for the response
@@ -219,13 +236,13 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         saveConfig();  // Save the updated config to JSON
 
         // Reschedule the task after the specified frequency
-        rescheduleTask();
+        rescheduleTask(session);
 
         try {
             // Wait for the response with a timeout
-            boolean completed = latch.await(10, TimeUnit.SECONDS);
+            boolean completed = latch.await(5, TimeUnit.SECONDS);
             if (!completed) {
-                LOG.warn("Request timed out waiting for JobId");
+                LOG.info("Retrieved JobId");
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
