@@ -35,8 +35,15 @@
         <small class="opacity-75 text-nowrap">
           <i class="spinner-grow spinner-grow-sm" role="status"></i> <span th:text="#{hl7.files.processing}"> </span>
         </small>
-
       </div>
+
+      <div id="job-lastRun" th:attr="data-job-id=${jobId}" th:if="${jobId == null}">
+        <small class="opacity-75 text-nowrap text-success">
+          <i class="bi bi-check"></i>
+          <span th:text="'Actualizado em ' + ${#temporals.format(lastRunTime, 'dd/MM/yyyy HH:mm')}"></span>  <!-- Format the current date and time -->
+        </small>
+      </div>
+
 
       <!--/* Completed successfully with logs */-->
       <div th:if="${processedWithErrors}" class="accordion accordion-flush" id="accordionFlushExample">
@@ -61,13 +68,16 @@
         </div>
       </div>
 
-      <!--/* Did not complete successfully */-->
-      <small th:if="${processingResult.isCompletedExceptionally()}" class="opacity-75 text-nowrap text-danger">
-        <i class="bi bi-x"></i>
-        <span th:if="${hl7File==null}" th:text="#{hl7.files.processing.error}"></span>
-        <span th:if="${hl7File!=null}"
-              th:text="#{hl7.files.processing.error.previous.at(${#temporals.format(hl7File.lastModifiedTime)})}"></span>
-      </small>
+
+<!--      &lt;!&ndash;/* Did not complete successfully */&ndash;&gt;-->
+<!--      <small th:if="${processingResult.isCompletedExceptionally()}" class="opacity-75 text-nowrap text-danger">-->
+<!--        <i class="bi bi-x"></i>-->
+<!--        <span th:if="${hl7File==null}" th:text="#{hl7.files.processing.error}"></span>-->
+<!--        <span th:if="${hl7File!=null}"-->
+<!--              th:text="#{hl7.files.processing.error.previous.at(${#temporals.format(hl7File.lastModifiedTime)})}"></span>-->
+<!--      </small>-->
+
+
     </div>
   </div>
 
@@ -154,14 +164,14 @@
     const jobId = jobStatusContainer?.getAttribute("data-job-id");
 
     if (jobId) {
+      console.log(jobId)
       checkJobStatus(jobId);
     }
 
     function checkJobStatus(jobId) {
-      fetch("/file/status")
+      fetch("/file/status")//CHANGED
               .then(response => response.json())
               .then(data => {
-
                 if (data.status === "COMPLETED") {
                   jobStatusContainer.innerHTML = `
             <small class="opacity-75 text-nowrap text-success">
@@ -169,10 +179,15 @@
                 <span>Actualizado em ${formatLastRunTime([[${lastRunTime}]])}</span>  <!-- Format the current date and time -->
             </small>
         `;
+                  // Clear the timeout to stop polling
+                  if (timeout) {
+                    clearTimeout(timeout);
+                    timeout = null;
+                  }
                 } else if (data.status === "FAILED") {
                   jobStatusContainer.innerHTML = `<span class="text-danger">❌ Job Failed</span>`;
                 } else {
-                  setTimeout(() => checkJobStatus(jobId), 5000); // Retry every 5 seconds
+                  timeout = setTimeout(() => checkJobStatus(jobId), 5000); // Retry every 5 seconds
                 }
               })
               .catch(error => console.error("Error fetching job status:", error));

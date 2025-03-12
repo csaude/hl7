@@ -15,11 +15,12 @@ public interface SchedulerConfigService {
 
     public LocalTime getGenerationTime();
     public LocalDateTime getLastRunTime();
+    public String getJobId();
     public void reloadConfig();
 
-    public void updateConfig(int frequency, LocalTime generationTime, HttpSession httpSession);
+    public void updateConfig(int frequency, LocalTime generationTime);
 
-    public String scheduledTask(Hl7FileForm hl7FileForm, HttpSession httpSession);
+    public String scheduledTask(Hl7FileForm hl7FileForm);
 
     public ScheduledFuture<?> getProcessingResult();
 

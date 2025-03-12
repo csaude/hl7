@@ -119,10 +119,9 @@ public class ConfigController {
         hl7File.setHealthFacilities(hl7FileForm.getHealthFacilities());
 
         // Get JobId from the scheduledTask
-        String jobId = schedulerConfigService.scheduledTask(hl7FileForm, session);
+        String jobId = schedulerConfigService.scheduledTask(hl7FileForm);
 
         if(!Objects.equals(jobId, "PROCESSING")){
-            session.setAttribute("jobId", jobId);
             redirectAttrs.addFlashAttribute(Alert.success("hl7.schedule.success"));
 
         }

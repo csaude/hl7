@@ -96,7 +96,7 @@ public class SearchController {
     ) throws FileNotFoundException {
 
         // Retrieve jobId from session
-        String jobId = (String) session.getAttribute("jobId");
+        String jobId = config.getJobId();
         // Check if jobId exists and add it to the model for the view
         if (jobId != null && !jobId.isEmpty()) {
             model.addAttribute("jobId", jobId);
