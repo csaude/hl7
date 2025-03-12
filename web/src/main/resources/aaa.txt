@@ -1,10 +1,17 @@
-#Tue Dec 10 15:10:39 CAT 2024
+#Mon Mar 10 18:39:20 CAT 2025
+spring.mvc.hiddenmethod.filter.enabled=true
+openmrs.url=https\://sesp-zb.csaude.org.mz/openmrs
+app.hl7.filename=Patient_Demographic_Data
+spring.datasource.url=jdbc\:mysql\://172.16.60.50\:3306/hl7sync
+server.servlet.session.timeout=600
+spring.datasource.username=hl7App
+app.username=disa
+app.hl7.folder=/opt/hl7
+app.version=1.9.1-SNAPSHOT
+app.password=Disa123
+openmrs.username=y.nurmahomed
+spring.datasource.password=appClient$hl7fG
 app.openmrs.login=false
-app.password=A1^hKr$E*l4@2Qj5%$2c7p\!\#i
-app.username=Admin
-openmrs.password=A1^hKr$E*l4@2Qj5%$2c7p\!\#i
-openmrs.url=openmrs.url=http\://dev.fgh.org.mz\:89/openmrs/
-openmrs.username=Admin
-spring.datasource.password=root
-spring.datasource.url=jdbc\:mysql\://127.0.0.1\:3320/openmrs
-spring.datasource.username=root
+server.error.whitelabel.enabled=false
+app.hl7.hidden.filename=.Hidden.Patient_Demographic_Data
+openmrs.password=.Yassin.341

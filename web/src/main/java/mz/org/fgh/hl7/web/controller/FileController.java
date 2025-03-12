@@ -7,6 +7,7 @@ import mz.org.fgh.hl7.web.Alert;
 import mz.org.fgh.hl7.web.model.HL7File;
 import mz.org.fgh.hl7.web.service.Hl7Service;
 import mz.org.fgh.hl7.web.service.Hl7ServiceImpl;
+import mz.org.fgh.hl7.web.service.SchedulerConfigService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +30,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
@@ -51,6 +53,7 @@ public class FileController {
     private String hl7StandardName;
     private String hl7MetadataName;
     private String hl7HiddenFileName;
+
     private static final Logger log = LoggerFactory.getLogger(FileController.class.getName());
 
     public FileController(Hl7Service hl7Service, WebClient webClient, @Value("${hl7.fileStatus.api}") String hl7FileStatusAPI, @Value("${hl7.hidden.file.name}") String hl7HiddenFileName, @Value("${hl7.default.download.folder}") String hl7DefaultDownloadFolder,  @Value("${hl7.generatedHl7Files.api}") String hl7GeneratedFilesAPI, @Value("${hl7.downloadFile.api}") String hl7DownloadFileAPI, @Value("${hl7.standard.file.name}") String hl7StandardName, @Value("${hl7.metadata.name}") String hl7MetadataName) {
@@ -68,8 +71,11 @@ public class FileController {
     @GetMapping
     public String showFiles(Model model) {
         HL7File hl7File = hl7Service.getHl7File();
+        System.out.println(hl7File);
 
         if (hl7File == null || hl7File.getDistrict() == null || hl7File.getDistrict().getUuid() == null) {
+            System.out.println(hl7File.getDistrict());
+
             model.addAttribute("error", "Location information is missing.");
             return "file"; // Return the view with an error message
         }
@@ -130,6 +136,10 @@ public class FileController {
 
     @GetMapping("/download-and-save")
     public String downloadAndSave(@RequestParam("url") String fileUrl, RedirectAttributes redirectAttrs) {
+        return processFileDownload(fileUrl, redirectAttrs);
+    }
+
+    private String processFileDownload(String fileUrl, RedirectAttributes redirectAttrs) {
         try {
             // Create the save directory if it does not exist
             Path saveDirectory = Paths.get(hl7DefaultDownloadFolder);
@@ -193,9 +203,10 @@ public class FileController {
     }
 
     @GetMapping("/status")
-    public ResponseEntity<Map<String, Object>> getJobStatus(HttpSession session) {
-        String jobId = (String) session.getAttribute("jobId");
-
+    public ResponseEntity<Map<String, Object>> getJobStatus() {
+        // Check if this job was already processed
+//        Boolean alreadyProcessed = (Boolean) session.getAttribute("job_" + jobId + "_processed");
+        String jobId = config.getJobId();
         if (jobId == null || jobId.isEmpty()) {
             return ResponseEntity.ok(Collections.singletonMap("status", "NO_JOB"));
         }
@@ -218,6 +229,24 @@ public class FileController {
 
             // Extract the status attribute
             String status = rootNode.get("status").asText();
+
+            //Download the file and save once finished
+            if(Objects.equals(status, "COMPLETED")){
+                // Add already processed flag
+//                response.put("alreadyProcessed", alreadyProcessed == Boolean.TRUE);
+
+                // Only process if not already done
+//                if (alreadyProcessed != Boolean.TRUE) {
+                    String downloadURL = hl7DownloadFileAPI + jobId;
+                    RedirectAttributesModelMap redirectAttrs = new RedirectAttributesModelMap();
+                    processFileDownload(downloadURL, redirectAttrs);
+                    // Mark as processed
+//                    session.setAttribute("job_" + jobId + "_processed", Boolean.TRUE);
+                    log.info("File successfully saved!");
+//                }
+
+
+            }
 
             response.put("status", status);
             response.put("jobId", jobId);

@@ -13,4 +13,5 @@ public class Scheduler {
     private LocalTime generationTime;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastRunTime;
+    private String jobId;
 }

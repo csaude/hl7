@@ -30,14 +30,11 @@ public class ApiController {
 
     private Hl7Service hl7Service;
 
-    private SchedulerConfigService config;
-
     private MessageSource messageSource;
 
-    public ApiController(Hl7Service hl7Service, MessageSource messageSource, SchedulerConfigService config) {
+    public ApiController(Hl7Service hl7Service, MessageSource messageSource) {
         this.hl7Service = hl7Service;
         this.messageSource = messageSource;
-        this.config = config;
     }
 
     @GetMapping
