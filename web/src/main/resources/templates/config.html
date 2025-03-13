@@ -131,30 +131,36 @@
     provinceSelect.addEventListener("change", changeProvince, false);
     districtSelect.addEventListener("change", changeDistrict, false);
 
-
     const checkboxes = document.querySelectorAll(".row.facilities input[type=checkbox]");
     const allSwitch = document.querySelector("#flexSwitchCheckDefault");
 
-    const allChecked = Array.from(checkboxes).every(c => c.checked);
-    if (allChecked) {
-      allSwitch.checked = true;
-    }
-
-    checkboxes.forEach((c) =>
-            c.addEventListener("click", ev => {
-              const allChecked = Array.from(checkboxes).every(c => c.checked);
-              if (!ev.target.checked) {
-                allSwitch.checked = false;
-              } else if (allChecked) {
-                allSwitch.checked = true;
-              }
-            }));
-
-    allSwitch.addEventListener('click', (ev) => {
+// Function to update the switch state based on checkbox states
+    const updateSwitchState = () => {
       const allChecked = Array.from(checkboxes).every(c => c.checked);
-      console.log(allChecked);
-      checkboxes.forEach((c) => c.checked = !allChecked);
+      allSwitch.checked = allChecked; // Switch is checked if all checkboxes are checked
+    };
+
+// Function to toggle the state of all checkboxes
+    const toggleCheckboxes = () => {
+      const allChecked = Array.from(checkboxes).every(c => c.checked);
+      checkboxes.forEach((c) => c.checked = !allChecked); // If all are checked, uncheck; otherwise, check all
+    };
+
+// Initial state check: if all checkboxes are checked, update the switch
+    updateSwitchState();
+
+    checkboxes.forEach((checkbox) =>
+            checkbox.addEventListener("click", () => {
+              updateSwitchState(); // Update switch when any checkbox is clicked
+            })
+    );
+
+    allSwitch.addEventListener('click', () => {
+      toggleCheckboxes(); // Toggle all checkboxes when the switch is clicked
+      updateSwitchState(); // Update the switch after toggling the checkboxes
     });
+
+
   });
 </script>
 </body>

@@ -46,13 +46,11 @@ public class ConfigController {
     private Hl7Service hl7Service;
     private LocationService locationService;
     private SchedulerConfigService schedulerConfigService;
-    private WebClient webClient;
 
     public ConfigController(Hl7Service hl7Service, LocationService locationService, SchedulerConfigService schedulerConfigService, WebClient webClient) {
         this.hl7Service = hl7Service;
         this.locationService = locationService;
         this.schedulerConfigService = schedulerConfigService;
-        this.webClient = webClient;
     }
 
     @GetMapping
@@ -107,7 +105,7 @@ public class ConfigController {
             BindingResult result,
             Model model,
             RedirectAttributes redirectAttrs,
-            HttpSession session ) throws HL7Exception, IOException {
+            HttpSession session ) throws Exception {
 
         if (result.hasErrors()) {
             return newHL7Form(hl7FileForm, model, redirectAttrs);

@@ -20,9 +20,8 @@ public interface SchedulerConfigService {
 
     public void updateConfig(int frequency, LocalTime generationTime);
 
-    public String scheduledTask(Hl7FileForm hl7FileForm);
+    public String scheduledTask(Hl7FileForm hl7FileForm) throws Exception;
 
     public ScheduledFuture<?> getProcessingResult();
-
 
 }
