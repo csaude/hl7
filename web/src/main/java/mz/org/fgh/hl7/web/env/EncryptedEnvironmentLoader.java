@@ -38,7 +38,6 @@ public class EncryptedEnvironmentLoader
 
 
         Resource path = new ClassPathResource("application.properties.enc");
-//        Resource path = new FileSystemResource("D:/Work/Repository/hl7/web/src/main/resources/application.properties.enc");
 
 
         PropertySource<?> propertySource = loadEncryptedProperties(loader, path);
