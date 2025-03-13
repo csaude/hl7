@@ -5,6 +5,7 @@ import mz.org.fgh.hl7.web.controller.FileController;
 import mz.org.fgh.hl7.web.model.Location;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -44,22 +45,17 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
     private Scheduler config;
     private final TaskScheduler taskScheduler;
     private ScheduledFuture<?> scheduledFuture;
-
     private Hl7Service hl7Service;
-
     private WebClient webClient;
-
     private String hl7GenerateAPI;
+    private Hl7FileService fileService;
 
-    @Autowired
-    private FileController fileController;
-
-    public SchedulerConfigServiceImpl(FileController fileController, TaskScheduler taskScheduler, Hl7Service hl7Service, WebClient webClient, @Value("${hl7.generate.api}") String hl7GenerateAPI) {
+    public SchedulerConfigServiceImpl(@Lazy Hl7FileService fileService, TaskScheduler taskScheduler, Hl7Service hl7Service, WebClient webClient, @Value("${hl7.generate.api}") String hl7GenerateAPI) {
         this.taskScheduler = taskScheduler;
         this.hl7Service = hl7Service;
         this.webClient = webClient;
         this.hl7GenerateAPI = hl7GenerateAPI;
-        this.fileController = fileController;
+        this.fileService = fileService;
         loadConfig(); // Load on startup
     }
 
@@ -143,7 +139,13 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         LOG.info(String.valueOf("Next scheduled execution:" + new Date(System.currentTimeMillis() + delay)));
 
         // Schedule the new task
-        scheduledFuture = taskScheduler.schedule(  () -> scheduledTask(null), new Date(System.currentTimeMillis() + delay));
+        scheduledFuture = taskScheduler.schedule(  () -> {
+            try {
+                scheduledTask(null);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }, new Date(System.currentTimeMillis() + delay));
     }
 
     private long calculateDelay() {
@@ -177,10 +179,10 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         return delay;
     }
 
-    public String scheduledTask(Hl7FileForm hl7FileForm) {
+    public String scheduledTask(Hl7FileForm hl7FileForm) throws Exception {
 
         // Call getJobStatus method
-        ResponseEntity<Map<String, Object>> statusResponse = fileController.getJobStatus();
+        ResponseEntity<Map<String, Object>> statusResponse = fileService.checkJobStatus();
         Map<String, Object> statusMap = statusResponse.getBody();
 
         // Check if there's an ongoing job
