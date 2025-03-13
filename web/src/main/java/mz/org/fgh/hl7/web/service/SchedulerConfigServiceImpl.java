@@ -72,6 +72,7 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
             LOG.error("Error reading config file", e);
             config = getDefaultConfig(); // Ensure config is never null
         }
+        rescheduleTask();
     }
 
     private void createDefaultConfig(File configFile) {
@@ -135,11 +136,21 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
 
         // Calculate the delay until the next task execution
         long delay = calculateDelay();
-//        long delay = 1600;
-        LOG.info(String.valueOf("Next scheduled execution:" + new Date(System.currentTimeMillis() + delay)));
 
-        // Schedule the new task
-        scheduledFuture = taskScheduler.schedule(  () -> {
+        LOG.info("Next scheduled execution: " + new Date(System.currentTimeMillis() + delay));
+
+        // If the calculated delay is negative (task overdue), execute the task immediately
+        if (delay <= 0) {
+            try {
+                scheduledTask(null);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            delay = calculateDelay(); // Recalculate delay after immediate execution
+        }
+
+        // Schedule the new task at the calculated time in the future
+        scheduledFuture = taskScheduler.schedule(() -> {
             try {
                 scheduledTask(null);
             } catch (Exception e) {
@@ -180,7 +191,6 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
     }
 
     public String scheduledTask(Hl7FileForm hl7FileForm) throws Exception {
-
         // Call getJobStatus method
         ResponseEntity<Map<String, Object>> statusResponse = fileService.checkJobStatus();
         Map<String, Object> statusMap = statusResponse.getBody();
