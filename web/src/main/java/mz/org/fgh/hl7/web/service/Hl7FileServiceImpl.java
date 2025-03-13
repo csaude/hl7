@@ -182,10 +182,14 @@ public class Hl7FileServiceImpl implements Hl7FileService{
 
     @Override
     public ResponseEntity<Map<String, Object>> checkJobStatus() throws Exception {
-
-        String jobStatusUrl = hl7FileStatusAPI + config.getJobId();
         Map<String, Object> response = new HashMap<>();
 
+        if (config.getJobId() == null) {
+            response.put("status", "Not Found!");
+            return ResponseEntity.ok(response);
+        }
+
+        String jobStatusUrl = hl7FileStatusAPI + config.getJobId();
         // Make API call to check job status
         String resp = webClient.get()
                 .uri(jobStatusUrl)

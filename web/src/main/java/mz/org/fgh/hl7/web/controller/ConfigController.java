@@ -47,7 +47,7 @@ public class ConfigController {
     private LocationService locationService;
     private SchedulerConfigService schedulerConfigService;
 
-    public ConfigController(Hl7Service hl7Service, LocationService locationService, SchedulerConfigService schedulerConfigService, WebClient webClient) {
+    public ConfigController(Hl7Service hl7Service, LocationService locationService, SchedulerConfigService schedulerConfigService) {
         this.hl7Service = hl7Service;
         this.locationService = locationService;
         this.schedulerConfigService = schedulerConfigService;
