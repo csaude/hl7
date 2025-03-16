@@ -117,7 +117,7 @@
               <th class="fw-semibold">Sexo</th>
               <th class="fw-semibold">Endereço</th>
               <th class="fw-semibold">US</th>
-              <th class="fw-semibold">Cidade</th>
+              <th class="fw-semibold">Districto</th>
               <th class="fw-semibold">Província</th>
               <th class="fw-semibold">Última Consulta</th>
             </tr>
@@ -125,13 +125,15 @@
             <tbody>
             <tr th:each="patient : ${hl7Patients}" class="border-bottom">
               <td>
-                <i th:if="${patient.gender == 'M'}" class="bi bi-person me-2 text-primary"></i><span th:if="${patient.gender == 'M'}" th:text="${patient.pid}"></span>
-                <i th:if="${patient.gender == 'F'}" class="bi bi-person me-2 text-danger"></i><span th:if="${patient.gender == 'F'}" th:text="${patient.pid}"></span>
+<!--                <i th:if="${patient.gender == 'M'}" class="bi bi-person me-2 text-primary"></i>-->
+                <span th:if="${patient.gender == 'M'}" th:text="${patient.pid}"></span>
+<!--                <i th:if="${patient.gender == 'F'}" class="bi bi-person me-2 text-danger"></i>-->
+                <span th:if="${patient.gender == 'F'}" th:text="${patient.pid}"></span>
               </td>
               <td th:text="${patient.givenName}"></td>
               <td th:text="${patient.middleName}"></td>
               <td th:text="${patient.familyName}"></td>
-              <td th:text="${patient.birthDate}"></td>
+              <td th:text="${#temporals.format(patient.birthDate, 'dd/MM/yyyy')}"></td>
               <td>
                 <span th:if="${patient.gender == 'M'}" class="badge bg-primary bg-gradient text-white">Masculino</span>
                 <span th:if="${patient.gender == 'F'}" class="badge bg-danger text-white">Feminino</span>
