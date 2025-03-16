@@ -1,17 +1,16 @@
 package mz.org.fgh.hl7.web.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import mz.org.fgh.hl7.web.controller.FileController;
 import mz.org.fgh.hl7.web.model.Location;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import mz.org.fgh.hl7.web.Hl7FileForm;
 import mz.org.fgh.hl7.web.model.HL7File;
-import mz.org.fgh.hl7.web.model.ProcessingResult;
 import mz.org.fgh.hl7.web.model.Scheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,9 +19,7 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import sun.rmi.runtime.Log;
 
-import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
@@ -31,7 +28,6 @@ import java.time.LocalTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -56,7 +52,13 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         this.webClient = webClient;
         this.hl7GenerateAPI = hl7GenerateAPI;
         this.fileService = fileService;
+
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void init(){
         loadConfig(); // Load on startup
+        rescheduleTask();
     }
 
     public void loadConfig() {
@@ -72,7 +74,6 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
             LOG.error("Error reading config file", e);
             config = getDefaultConfig(); // Ensure config is never null
         }
-        rescheduleTask();
     }
 
     private void createDefaultConfig(File configFile) {
@@ -134,14 +135,18 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
             scheduledFuture.cancel(false);
         }
 
+        LOG.info("Calculating delay");
         // Calculate the delay until the next task execution
         long delay = calculateDelay();
 
         LOG.info("Next scheduled execution: " + new Date(System.currentTimeMillis() + delay));
 
+        LOG.info("If 0 then it needs to execute now");
+
         // If the calculated delay is negative (task overdue), execute the task immediately
         if (delay <= 0) {
             try {
+                LOG.info("Executing task now");
                 scheduledTask(null);
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -152,6 +157,7 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         // Schedule the new task at the calculated time in the future
         scheduledFuture = taskScheduler.schedule(() -> {
             try {
+                LOG.info("Scheduling next task");
                 scheduledTask(null);
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -185,12 +191,13 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
             delay += Duration.ofDays(getFrequency()).toMillis();
         }
 
-        LOG.info("We have the following delay: "+delay);
+        LOG.info("We have the following delay: {}", delay);
 
         return delay;
     }
 
     public String scheduledTask(Hl7FileForm hl7FileForm) throws Exception {
+        LOG.info("Starting scheduled task");
         // Call getJobStatus method
         ResponseEntity<Map<String, Object>> statusResponse = fileService.checkJobStatus();
         Map<String, Object> statusMap = statusResponse.getBody();
@@ -207,7 +214,9 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         LOG.info("Scheduled task currently running at frequency: " + frequency + " minutes");
         System.out.println(hl7FileForm);
 
-        if(hl7FileForm != null){
+        if (hl7FileForm == null) {
+            hl7FileForm = new Hl7FileForm();
+        } else {
         LOG.info("From HL7 Form");
         // Get new values from form
         int newFrequency = hl7FileForm.getFrequency();
@@ -222,14 +231,24 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         // Generate HL7 File
         HL7File hl7File = hl7Service.getHl7File();
 
-        if (hl7FileForm == null) {
-            hl7FileForm = new Hl7FileForm();
-        }
+        System.out.println(hl7File);
 
         // Assign values with fallback to `hl7File`
-        hl7FileForm.setProvince(hl7FileForm.getProvince() != null ? hl7FileForm.getProvince() : hl7File.getProvince());
-        hl7FileForm.setDistrict(hl7FileForm.getDistrict() != null ? hl7FileForm.getDistrict() : hl7File.getDistrict());
-        hl7FileForm.setHealthFacilities(hl7FileForm.getHealthFacilities() != null ? hl7FileForm.getHealthFacilities() : hl7File.getHealthFacilities());
+        if (hl7FileForm.getProvince() == null) {
+            hl7FileForm.setProvince(hl7File.getProvince());
+        }
+
+        if (hl7FileForm.getDistrict() == null) {
+            hl7FileForm.setDistrict(hl7File.getDistrict());
+        }
+
+        if (hl7FileForm.getHealthFacilities() == null) {
+            hl7FileForm.setHealthFacilities(hl7File.getHealthFacilities());
+        }
+
+//        hl7FileForm.setProvince(hl7FileForm.getProvince() != null ? hl7FileForm.getProvince() : hl7File.getProvince());
+//        hl7FileForm.setDistrict(hl7FileForm.getDistrict() != null ? hl7FileForm.getDistrict() : hl7File.getDistrict());
+//        hl7FileForm.setHealthFacilities(hl7FileForm.getHealthFacilities() != null ? hl7FileForm.getHealthFacilities() : hl7File.getHealthFacilities());
 
 
         // Create a CountDownLatch to wait for the response

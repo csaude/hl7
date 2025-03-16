@@ -1,5 +1,6 @@
 package mz.org.fgh.hl7.web.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import mz.org.fgh.hl7.web.model.HL7File;
@@ -7,9 +8,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -185,33 +188,69 @@ public class Hl7FileServiceImpl implements Hl7FileService{
         Map<String, Object> response = new HashMap<>();
 
         if (config.getJobId() == null) {
+            log.warn("Job ID not configured in the config.json");
             response.put("status", "Not Found!");
             return ResponseEntity.ok(response);
         }
 
         String jobStatusUrl = hl7FileStatusAPI + config.getJobId();
-        // Make API call to check job status
-        String resp = webClient.get()
-                .uri(jobStatusUrl)
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+        String resp = null;
 
-        // Parse JSON response
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode rootNode = mapper.readTree(resp);
-        // Extract the status attribute
-        String status = rootNode.get("status").asText();
+        try {
+            log.debug("Calling API: {}", jobStatusUrl);
+            resp = webClient.get()
+                    .uri(jobStatusUrl)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
 
-        // Download the file and save once finished
-        if (Objects.equals(status, "COMPLETED")) {
-            String downloadURL = hl7DownloadFileAPI + config.getJobId();
-            downloadAndSaveFile(downloadURL);
-            log.info("File successfully saved!");
+            if (resp == null || resp.isEmpty()) {
+                log.warn("Empty response received from API: {}", jobStatusUrl);
+                response.put("status", "Unknown");
+                return ResponseEntity.ok(response);
+            }
+
+            // Parse JSON response
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode rootNode = mapper.readTree(resp);
+
+            if (rootNode == null || rootNode.get("status") == null) {
+                log.error("Invalid JSON response: {}", resp);
+                response.put("status", "Invalid Response");
+                return ResponseEntity.ok(response);
+            }
+
+            String status = rootNode.get("status").asText();
+            log.info("Job status received: {}", status);
+
+            // Download file if job is completed
+            if ("COMPLETED".equals(status)) {
+                String downloadURL = hl7DownloadFileAPI + config.getJobId();
+                try {
+                    downloadAndSaveFile(downloadURL);
+                    log.info("File successfully saved from {}", downloadURL);
+                } catch (Exception e) {
+                    log.error("Failed to download or save file: {}", e.getMessage(), e);
+                    response.put("error", "File download failed");
+                }
+            }
+
+            response.put("status", status);
+            response.put("jobId", config.getJobId());
+            return ResponseEntity.ok(response);
+
+        } catch (WebClientResponseException e) {
+            log.error("API call failed with status {}: {}", e.getStatusCode(), e.getResponseBodyAsString(), e);
+            response.put("error", "API call failed: " + e.getStatusCode());
+        } catch (JsonProcessingException e) {
+            log.error("Error parsing JSON response: {}", resp, e);
+            response.put("error", "Invalid JSON response");
+        } catch (Exception e) {
+            log.error("Unexpected error while checking job status: {}", e.getMessage(), e);
+            response.put("error", "Unexpected error occurred");
         }
 
-        response.put("status", status);
-        response.put("jobId", config.getJobId());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
+
 }
