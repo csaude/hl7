@@ -1,7 +1,9 @@
 package mz.org.fgh.hl7.web.controller;
 
 import java.io.FileNotFoundException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -108,6 +110,21 @@ public class SearchController {
             }
 
             List<PatientDemographic> search = hl7Service.search(searchForm.getPartialNid());
+
+            // Format all birthDates in the list
+            for (PatientDemographic patient : search) {
+                String originalDate = patient.getBirthDate();
+                if (originalDate != null && !originalDate.isEmpty()) {
+                    try {
+                        LocalDate date = LocalDate.parse(originalDate); // Assumes format is yyyy-MM-dd
+                        String formattedDate = date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                        patient.setBirthDate(formattedDate); // This assumes you have a setter
+                    } catch (Exception e) {
+                        // Keep original if parsing fails
+                        System.out.println("Failed to parse date: " + originalDate);
+                    }
+                }
+            }
 
             if (search.isEmpty()) {
                 model.addAttribute("errorMessage",
