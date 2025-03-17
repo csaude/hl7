@@ -141,8 +141,6 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
 
         LOG.info("Next scheduled execution: " + new Date(System.currentTimeMillis() + delay));
 
-        LOG.info("If 0 then it needs to execute now");
-
         // If the calculated delay is negative (task overdue), execute the task immediately
         if (delay <= 0) {
             try {

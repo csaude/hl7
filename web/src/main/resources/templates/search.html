@@ -133,7 +133,7 @@
               <td th:text="${patient.givenName}"></td>
               <td th:text="${patient.middleName}"></td>
               <td th:text="${patient.familyName}"></td>
-              <td th:text="${#temporals.format(patient.birthDate, 'dd/MM/yyyy')}"></td>
+              <td th:text="${patient.birthDate}"></td>
               <td>
                 <span th:if="${patient.gender == 'M'}" class="badge bg-primary bg-gradient text-white">Masculino</span>
                 <span th:if="${patient.gender == 'F'}" class="badge bg-danger text-white">Feminino</span>
