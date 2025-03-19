@@ -6,7 +6,7 @@ import lombok.ToString;
 @ToString
 public class Alert {
     enum Type {
-        SUCCESS("alert-success"), DANGER("alert-danger");
+        SUCCESS("alert-success"), DANGER("alert-danger"), WARNING("alert-warning");
 
         @Getter
         String cssClass;
@@ -33,4 +33,5 @@ public class Alert {
     public static Alert danger(String message) {
         return new Alert(Type.DANGER, message);
     }
+    public static Alert warning(String message) {return new Alert(Type.WARNING, message); }
 }

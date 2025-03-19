@@ -1,20 +1,28 @@
 package mz.org.fgh.hl7.web.controller;
 
 import java.io.IOException;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
+import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 
+import mz.org.fgh.hl7.web.service.SchedulerConfigService;
 import org.apache.commons.collections4.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import ca.uhn.hl7v2.HL7Exception;
@@ -37,10 +45,12 @@ public class ConfigController {
 
     private Hl7Service hl7Service;
     private LocationService locationService;
+    private SchedulerConfigService schedulerConfigService;
 
-    public ConfigController(Hl7Service hl7Service, LocationService locationService) {
+    public ConfigController(Hl7Service hl7Service, LocationService locationService, SchedulerConfigService schedulerConfigService) {
         this.hl7Service = hl7Service;
         this.locationService = locationService;
+        this.schedulerConfigService = schedulerConfigService;
     }
 
     @GetMapping
@@ -49,8 +59,13 @@ public class ConfigController {
             Model model,
             RedirectAttributes redirectAttrs) {
 
-        try {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        LOG.debug("Authentication: {}", authentication);
+        if (authentication != null) {
+            LOG.debug("Principal: {}", authentication.getPrincipal());
+        }
 
+        try {
             CompletableFuture<ProcessingResult> hl7FileProcessing = hl7Service.getProcessingResult();
             if (hl7FileProcessing != null && !hl7FileProcessing.isDone()) {
                 throw new AppException(
@@ -58,6 +73,7 @@ public class ConfigController {
             }
 
             HL7File hl7File = hl7Service.getHl7File();
+
             if (hl7File != null
                     && nullOrEquals(hl7FileForm.getProvince(), hl7File.getProvince())
                     && nullOrEquals(hl7FileForm.getDistrict(), hl7File.getDistrict())) {
@@ -65,7 +81,16 @@ public class ConfigController {
                 hl7FileForm.setDistrict(hl7File.getDistrict());
                 hl7FileForm.setHealthFacilities(hl7File.getHealthFacilities());
             }
+
             setAllProvinces(hl7FileForm, model);
+
+            int frequency = schedulerConfigService.getFrequency();
+            LocalTime generationTime = schedulerConfigService.getGenerationTime();
+
+            model.addAttribute("frequency", frequency);
+            model.addAttribute("generationTime", generationTime);
+
+
         } catch (AppException e) {
             LOG.error(e.getMessage(), e);
             redirectAttrs.addFlashAttribute(Alert.danger(e.getMessage()));
@@ -79,21 +104,29 @@ public class ConfigController {
             @Valid Hl7FileForm hl7FileForm,
             BindingResult result,
             Model model,
-            RedirectAttributes redirectAttrs) throws HL7Exception, IOException {
+            RedirectAttributes redirectAttrs,
+            HttpSession session ) throws Exception {
 
         if (result.hasErrors()) {
             return newHL7Form(hl7FileForm, model, redirectAttrs);
         }
 
-        HL7FileRequest req = new HL7FileRequest();
-        req.setProvince(hl7FileForm.getProvince());
-        req.setDistrict(hl7FileForm.getDistrict());
-        req.setHealthFacilities(hl7FileForm.getHealthFacilities());
-        hl7Service.generateHl7File(req);
+        HL7File hl7File = hl7Service.getHl7File();
+        hl7File.setProvince(hl7FileForm.getProvince());
+        hl7File.setDistrict(hl7FileForm.getDistrict());
+        hl7File.setHealthFacilities(hl7FileForm.getHealthFacilities());
 
-        // ConfigController.previousHl7FileForm = hl7FileForm;
+        // Get JobId from the scheduledTask
+        String jobId = schedulerConfigService.scheduledTask(hl7FileForm);
 
-        redirectAttrs.addFlashAttribute(Alert.success("hl7.schedule.success"));
+        if(!Objects.equals(jobId, "PROCESSING")){
+            redirectAttrs.addFlashAttribute(Alert.success("hl7.schedule.success"));
+
+        }
+        else {
+            redirectAttrs.addFlashAttribute(Alert.warning("hl7.processing.warning"));
+        }
+
         return "redirect:/search";
     }
 
@@ -111,6 +144,7 @@ public class ConfigController {
 
         model.addAttribute("allProvinces", allProvinces);
         List<Location> healthFacilities = hl7FileForm.getDistrict().getChildLocations();
+
         // Divide health facility list into equal sized sublists
         model.addAttribute("partitionedHF", ListUtils.partition(healthFacilities, ROW_SIZE));
     }

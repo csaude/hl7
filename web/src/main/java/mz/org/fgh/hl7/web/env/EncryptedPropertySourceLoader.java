@@ -44,7 +44,24 @@ public class EncryptedPropertySourceLoader implements PropertySourceLoader {
         try (BufferedReader input = new BufferedReader(new InputStreamReader(decryptedProperties))) {
             Properties props = new Properties();
             props.load(input);
+
+            // Get the Partner_Id from environment variable
+            String partnerId = System.getenv("Partner_Id");
+            String hl7Url = System.getenv("HL7_URL");
+            if (partnerId == null) {
+                partnerId = ""; // Or set a default value, or throw an exception
+            }
+
+            // Set the properties with the Partner_Id inserted
+            String baseUrl = hl7Url + partnerId;
+            props.setProperty("hl7.generate.api", baseUrl + "/api/demographics/generate");
+            props.setProperty("hl7.generatedHl7Files.api", baseUrl + "/api/demographics/getGeneratedHL7Files/");
+            props.setProperty("hl7.downloadFile.api", baseUrl + "/api/demographics/download/");
+            props.setProperty("hl7.fileStatus.api", baseUrl + "/api/demographics/status/");
+
+
             props.setProperty("app.disa.secretKey", new String(entries.get(DISA_SECRET_KEY_ALIAS)));
+
             return Collections.singletonList(new PropertiesPropertySource("decrypted-props", props));
         }
     }
