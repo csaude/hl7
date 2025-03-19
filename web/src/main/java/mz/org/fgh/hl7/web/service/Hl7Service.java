@@ -1,5 +1,6 @@
 package mz.org.fgh.hl7.web.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -39,4 +40,6 @@ public interface Hl7Service {
      * @return The list of patients matching the partial NID.
      */
     public List<PatientDemographic> search(String partialNID);
+
+    public LocalDateTime getFileLastModifiedTime();
 }

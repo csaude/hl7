@@ -7,6 +7,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.PropertySource;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 
@@ -35,7 +36,10 @@ public class EncryptedEnvironmentLoader
         HL7EncryptionServiceImpl encryptionService = new HL7EncryptionServiceImpl();
         EncryptedPropertySourceLoader loader = new EncryptedPropertySourceLoader(hl7KeyStoreService, encryptionService);
 
+
         Resource path = new ClassPathResource("application.properties.enc");
+
+
         PropertySource<?> propertySource = loadEncryptedProperties(loader, path);
 
         environment.getPropertySources().addFirst(propertySource);

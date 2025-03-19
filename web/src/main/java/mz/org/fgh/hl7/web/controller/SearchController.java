@@ -1,12 +1,18 @@
 package mz.org.fgh.hl7.web.controller;
 
 import java.io.FileNotFoundException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 
+import mz.org.fgh.hl7.web.model.*;
+import mz.org.fgh.hl7.web.service.SchedulerConfigService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.ObjectUtils;
@@ -18,10 +24,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import mz.org.fgh.hl7.web.Alert;
 import mz.org.fgh.hl7.web.AppException;
 import mz.org.fgh.hl7.web.SearchForm;
-import mz.org.fgh.hl7.web.model.HL7File;
-import mz.org.fgh.hl7.web.model.Location;
-import mz.org.fgh.hl7.web.model.PatientDemographic;
-import mz.org.fgh.hl7.web.model.ProcessingResult;
 import mz.org.fgh.hl7.web.service.Hl7Service;
 
 @Controller
@@ -29,9 +31,11 @@ import mz.org.fgh.hl7.web.service.Hl7Service;
 public class SearchController {
 
     private Hl7Service hl7Service;
+    private SchedulerConfigService config;
 
-    public SearchController(Hl7Service hl7Service) {
+    public SearchController(Hl7Service hl7Service, SchedulerConfigService config) {
         this.hl7Service = hl7Service;
+        this.config = config;
     }
 
     @ModelAttribute("searchAvailable")
@@ -55,10 +59,16 @@ public class SearchController {
         return hl7Service.getProcessingResult();
     }
 
+    @ModelAttribute("lastRunTime")
+    public LocalDateTime getLastRunTime() {
+        return config.getLastRunTime();
+    }
+
+
     @ModelAttribute("healthFacilities")
     public String getHealthFacilities() {
         HL7File hl7File = hl7Service.getHl7File();
-        if (hl7File == null) {
+        if (hl7File == null || hl7File.getHealthFacilities() == null) {
             return "";
         }
         return Location.joinLocations(hl7File.getHealthFacilities());
@@ -82,16 +92,39 @@ public class SearchController {
 
     @GetMapping
     public String search(@Valid SearchForm searchForm,
-            BindingResult bindingResult,
-            Model model) throws FileNotFoundException {
+                         BindingResult bindingResult,
+                         Model model,
+                         HttpSession session  // Add this parameter
+    ) throws FileNotFoundException {
+
+        // Retrieve jobId from session
+        String jobId = config.getJobId();
+        // Check if jobId exists and add it to the model for the view
+        if (jobId != null && !jobId.isEmpty()) {
+            model.addAttribute("jobId", jobId);
+        }
 
         try {
-
             if (bindingResult.hasErrors() || ObjectUtils.isEmpty(searchForm.getPartialNid())) {
                 return "search";
             }
 
             List<PatientDemographic> search = hl7Service.search(searchForm.getPartialNid());
+
+            // Format all birthDates in the list
+            for (PatientDemographic patient : search) {
+                String originalDate = patient.getBirthDate();
+                if (originalDate != null && !originalDate.isEmpty()) {
+                    try {
+                        LocalDate date = LocalDate.parse(originalDate); // Assumes format is yyyy-MM-dd
+                        String formattedDate = date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                        patient.setBirthDate(formattedDate); // This assumes you have a setter
+                    } catch (Exception e) {
+                        // Keep original if parsing fails
+                        System.out.println("Failed to parse date: " + originalDate);
+                    }
+                }
+            }
 
             if (search.isEmpty()) {
                 model.addAttribute("errorMessage",
@@ -105,6 +138,7 @@ public class SearchController {
         }
 
         return "search";
-
     }
+
+    
 }

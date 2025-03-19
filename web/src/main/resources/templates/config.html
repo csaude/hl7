@@ -7,127 +7,162 @@
 
 <body th:replace="~{ base :: common_body(~{:: .content}, ~{:: script})}">
 
-  <div class="row justify-content-center content">
 
-    <div class="col-lg-8">
+<div class="row justify-content-center content">
 
-      <form action="#" th:action="@{/config}" th:object="${hl7FileForm}" method="post">
+  <div class="col-lg-8">
 
-        <div class="row">
+    <form action="#" th:action="@{/config}" th:object="${hl7FileForm}" method="post">
+      <div class="mb-3 border rounded p-3 bg-light">
+        <legend class="h4"><strong>Selecção de Unidade(s) Sanitária(s) para geração do ficheiro HL7s</strong></legend>
+<!--        <p class="text-muted">Seleccione a(s) unidades sanitárias para geração do ficheiro HL7:</p>-->
 
-          <!--/* Province */-->
+      <div class="row">
 
-          <div class="col-sm-12 col-md-6 mb-3">
-            <label for="province" th:text="#{hl7.province}" class="form-label"></label>
-            <select th:field="*{province}" class="form-select">
-              <option th:each="p : ${allProvinces}" th:value="${p.uuid}" th:text="${p.name}"></option>
-            </select>
-          </div>
+        <!--/* Province */-->
 
-          <!--/* District */-->
+        <div class="col-sm-12 col-md-6 mb-3">
+          <label for="province" th:text="#{hl7.province}" class="form-label"></label>
+          <select th:field="*{province}" class="form-select">
+            <option th:each="p : ${allProvinces}" th:value="${p.uuid}" th:text="${p.name}"></option>
+          </select>
+        </div>
 
-          <div class="col-sm-12 col-md-6 mb-3">
-            <label for="district" th:text="#{hl7.district}" class="form-label"></label>
-            <select th:field="*{district}" class="form-select">
-              <option th:each="d : *{province.childLocations}" th:value="${d.uuid}" th:text="${d.name}"></option>
-            </select>
+        <!--/* District */-->
+
+        <div class="col-sm-12 col-md-6 mb-3">
+          <label for="district" th:text="#{hl7.district}" class="form-label"></label>
+          <select th:field="*{district}" class="form-select">
+            <option th:each="d : *{province.childLocations}" th:value="${d.uuid}" th:text="${d.name}"></option>
+          </select>
+        </div>
+      </div>
+
+      <!--/* Health Facilities */-->
+
+      <div class="row facilities">
+
+        <div th:each="partition : ${partitionedHF}" class="col">
+
+          <div th:each="hf : ${partition}"
+               th:class="${#fields.hasErrors('healthFacilities') ? 'form-check is-invalid': 'form-check'}">
+
+            <input type="checkbox" th:field="*{healthFacilities}" th:value="${hf.uuid}"
+                   th:class="${#fields.hasErrors('healthFacilities') ? 'form-check-input is-invalid': 'form-check-input'}"
+                   aria-describedby="healthFacilitiesInvalidFeedback" />
+            <label th:for="${#ids.prev('healthFacilities')}" th:text="${hf.name}" class="form-check-label"></label>
+
           </div>
         </div>
 
-        <!--/* Health Facilities */-->
-
-        <div style="display: flex; gap: 10px;">
-          <label th:text="#{hl7.healthFacilities}"
-            th:class="${#fields.hasErrors('healthFacilities') ? 'form-label is-invalid': 'form-label'}"></label>
-
+        <div class="d-flex justify-content-end mt-2">
           <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault">
-            <label class="form-check-label" for="flexSwitchCheckDefault"><small>Todas</small></label>
+            <label class="form-check-label" for="flexSwitchCheckDefault"><small>Seleccionar todas do distrito</small></label>
           </div>
         </div>
+      </div>
 
-        <div class="row facilities">
 
-          <div th:each="partition : ${partitionedHF}" class="col">
 
-            <div th:each="hf : ${partition}"
-              th:class="${#fields.hasErrors('healthFacilities') ? 'form-check is-invalid': 'form-check'}">
+      <div th:if="${#fields.hasErrors('healthFacilities')}" th:id="healthFacilitiesInvalidFeedback"
+           th:errors="*{healthFacilities}" class="invalid-feedback"></div>
 
-              <input type="checkbox" th:field="*{healthFacilities}" th:value="${hf.uuid}"
-                th:class="${#fields.hasErrors('healthFacilities') ? 'form-check-input is-invalid': 'form-check-input'}"
-                aria-describedby="healthFacilitiesInvalidFeedback" />
-              <label th:for="${#ids.prev('healthFacilities')}" th:text="${hf.name}" class="form-check-label"></label>
-
-            </div>
-          </div>
-        </div>
-
-        <div th:if="${#fields.hasErrors('healthFacilities')}" th:id="healthFacilitiesInvalidFeedback"
-          th:errors="*{healthFacilities}" class="invalid-feedback"></div>
-
-        <div th:if="${#lists.isEmpty(#object.district.childLocations)}">
+      <div th:if="${#lists.isEmpty(#object.district.childLocations)}">
           <span>
             <span class="form-text" th:text="#{hl7.healthFacilities.empty}"></span>
           </span>
-          <br />
-        </div>
-
         <br />
+      </div>
+      </div>
 
-        <button th:type="submit" th:disabled="${#lists.isEmpty(#object.district.childLocations)}"
-          th:text="#{hl7.submit}" class="btn btn-primary"></button>
+      <br />
 
-      </form>
-    </div>
+      <!-- HL7 File Generation Configuration -->
+      <div class="mb-3 border rounded p-3 bg-light">
+        <legend class="h4"><strong>Selecção da frequência de geração de ficheiro HL7 para a(s) US acima</strong></legend>
+<!--        <p class="text-muted">Seleccione a frequência de geração do ficheiro HL7 para as US acima:</p>-->
+        <div class="row mb-3">
+          <!-- Frequency Selection -->
+          <div class="col-sm-6">
+            <label for="frequency" class="form-label">Frequência</label>
+            <select id="frequency" name="frequency" class="form-select">
+              <option value="5" th:selected="${frequency == 5}">5 dias</option>
+              <option value="10" th:selected="${frequency == 10}">10 dias</option>
+              <option value="15" th:selected="${frequency == 15}">15 dias</option>
+              <option value="30" th:selected="${frequency == 30}">30 dias</option>
+            </select>
+          </div>
+          <!-- Time Selection -->
+          <div class="col-sm-6">
+            <label for="generationTime" class="form-label">Hora</label>
+            <input type="time" id="generationTime" name="generationTime" class="form-control" th:value="${generationTime}"/>
+          </div>
+        </div>
+      </div>
+
+
+      <button th:type="submit" th:disabled="${#lists.isEmpty(#object.district.childLocations)}"
+              th:text="#{hl7.submit}" class="btn btn-primary"></button>
+
+
+    </form>
   </div>
+</div>
 
-  <script th:inline="javascript">
-    'use strict';
+<script th:inline="javascript">
+  'use strict';
 
-    document.addEventListener("DOMContentLoaded", function () {
-      const provinceSelect = document.getElementById("province");
-      const districtSelect = document.getElementById("district");
+  document.addEventListener("DOMContentLoaded", function () {
+    const provinceSelect = document.getElementById("province");
+    const districtSelect = document.getElementById("district");
 
-      function changeProvince() {
-        const provinceOption = provinceSelect.selectedOptions[0];
-        location.search = `province=${provinceOption.value}`;
-      }
+    function changeProvince() {
+      const provinceOption = provinceSelect.selectedOptions[0];
+      location.search = `province=${provinceOption.value}`;
+    }
 
-      function changeDistrict() {
-        const provinceOption = provinceSelect.selectedOptions[0];
-        const districtOption = districtSelect.selectedOptions[0];
-        location.search = `province=${provinceOption.value}&district=${districtOption.value}`;
-      }
+    function changeDistrict() {
+      const provinceOption = provinceSelect.selectedOptions[0];
+      const districtOption = districtSelect.selectedOptions[0];
+      location.search = `province=${provinceOption.value}&district=${districtOption.value}`;
+    }
 
-      provinceSelect.addEventListener("change", changeProvince, false);
-      districtSelect.addEventListener("change", changeDistrict, false);
+    provinceSelect.addEventListener("change", changeProvince, false);
+    districtSelect.addEventListener("change", changeDistrict, false);
 
+    const checkboxes = document.querySelectorAll(".row.facilities input[type=checkbox]");
+    const allSwitch = document.querySelector("#flexSwitchCheckDefault");
 
-      const checkboxes = document.querySelectorAll(".row.facilities input[type=checkbox]");
-      const allSwitch = document.querySelector("#flexSwitchCheckDefault");
-
+// Function to update the switch state based on checkbox states
+    const updateSwitchState = () => {
       const allChecked = Array.from(checkboxes).every(c => c.checked);
-      if (allChecked) {
-        allSwitch.checked = true;
-      }
+      allSwitch.checked = allChecked; // Switch is checked if all checkboxes are checked
+    };
 
-      checkboxes.forEach((c) =>
-        c.addEventListener("click", ev => {
-          const allChecked = Array.from(checkboxes).every(c => c.checked);
-          if (!ev.target.checked) {
-            allSwitch.checked = false;
-          } else if (allChecked) {
-            allSwitch.checked = true;
-          }
-        }));
+// Function to toggle the state of all checkboxes
+    const toggleCheckboxes = () => {
+      const allChecked = Array.from(checkboxes).every(c => c.checked);
+      checkboxes.forEach((c) => c.checked = !allChecked); // If all are checked, uncheck; otherwise, check all
+    };
 
-      allSwitch.addEventListener('click', (ev) => {
-        const allChecked = Array.from(checkboxes).every(c => c.checked);
-        console.log(allChecked);
-        checkboxes.forEach((c) => c.checked = !allChecked);
-      });
+// Initial state check: if all checkboxes are checked, update the switch
+    updateSwitchState();
+
+    checkboxes.forEach((checkbox) =>
+            checkbox.addEventListener("click", () => {
+              updateSwitchState(); // Update switch when any checkbox is clicked
+            })
+    );
+
+    allSwitch.addEventListener('click', () => {
+      toggleCheckboxes(); // Toggle all checkboxes when the switch is clicked
+      updateSwitchState(); // Update the switch after toggling the checkboxes
     });
-  </script>
+
+
+  });
+</script>
 </body>
 
 </html>
