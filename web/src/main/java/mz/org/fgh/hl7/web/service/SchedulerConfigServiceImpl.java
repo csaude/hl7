@@ -171,9 +171,9 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         // If lastExecutionTime is available, calculate delay from that moment
         if (config.getLastRunTime() != null) {
             LocalDateTime lastExecutionTime = config.getLastRunTime();
-            LocalDateTime nextExecutionTime = lastExecutionTime.plusMinutes(getFrequency());
-//                    .withHour(config.getGenerationTime().getHour())
-//                    .withMinute(config.getGenerationTime().getMinute());
+            LocalDateTime nextExecutionTime = lastExecutionTime.plusDays(getFrequency())
+                    .withHour(config.getGenerationTime().getHour())
+                    .withMinute(config.getGenerationTime().getMinute());
 
             if (nextExecutionTime.isAfter(LocalDateTime.now())) {
                 delay = Duration.between(LocalDateTime.now(), nextExecutionTime).toMillis();
