@@ -63,6 +63,7 @@ public class LocationServiceImpl implements LocationService {
                         e -> new AppException("hl7.fetch.location.error", e))
                 .block();
 
+
         if (locationList.isEmpty()) {
             throw new AppException("hl7.fetch.province.error.empty");
         }

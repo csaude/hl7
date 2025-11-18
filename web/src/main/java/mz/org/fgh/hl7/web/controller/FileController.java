@@ -1,5 +1,6 @@
 package mz.org.fgh.hl7.web.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import mz.org.fgh.hl7.web.Alert;
 import mz.org.fgh.hl7.web.model.HL7File;
 import mz.org.fgh.hl7.web.service.Hl7FileService;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Collections;
@@ -77,10 +79,25 @@ public class FileController {
                 return ResponseEntity.ok(Collections.singletonMap("status", "NO_JOB"));
             }
 
-            ResponseEntity<Map<String, Object>> status = hl7FileService.checkJobStatus();
-            return ResponseEntity.ok(status.getBody());
+            return hl7FileService.checkJobStatus();
+
+
+        } catch (WebClientRequestException e) {
+            // --- THIS IS THE GRACEFUL CATCH ---
+            // This specifically catches "Connection Refused".
+            log.warn("Could not check job status. Server is down: {}", e.getMessage());
+            // Return a specific, non-scary error for the JavaScript
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE) // 503
+                    .body(Collections.singletonMap("error", "Server is unavailable"));
+
+        } catch (JsonProcessingException e) {
+            // This catches bad JSON from the middleware
+            log.error("Failed to parse job status response: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("error", "Invalid response from server"));
 
         } catch (Exception e) {
+            // This catches all other unexpected errors
             log.error("Error checking job status: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonMap("error", "Failed to fetch job status"));

@@ -67,11 +67,7 @@ public class SearchController {
 
     @ModelAttribute("healthFacilities")
     public String getHealthFacilities() {
-        HL7File hl7File = hl7Service.getHl7File();
-        if (hl7File == null || hl7File.getHealthFacilities() == null) {
-            return "";
-        }
-        return Location.joinLocations(hl7File.getHealthFacilities());
+        return config.getHealthFacilities();
     }
 
     @ModelAttribute("completedSuccessfully")
@@ -94,11 +90,13 @@ public class SearchController {
     public String search(@Valid SearchForm searchForm,
                          BindingResult bindingResult,
                          Model model,
-                         HttpSession session  // Add this parameter
+                         HttpSession session
     ) throws FileNotFoundException {
 
         // Retrieve jobId from session
         String jobId = config.getJobId();
+
+        System.out.println(jobId);
         // Check if jobId exists and add it to the model for the view
         if (jobId != null && !jobId.isEmpty()) {
             model.addAttribute("jobId", jobId);
@@ -116,9 +114,9 @@ public class SearchController {
                 String originalDate = patient.getBirthDate();
                 if (originalDate != null && !originalDate.isEmpty()) {
                     try {
-                        LocalDate date = LocalDate.parse(originalDate); // Assumes format is yyyy-MM-dd
+                        LocalDate date = LocalDate.parse(originalDate);
                         String formattedDate = date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-                        patient.setBirthDate(formattedDate); // This assumes you have a setter
+                        patient.setBirthDate(formattedDate);
                     } catch (Exception e) {
                         // Keep original if parsing fails
                         System.out.println("Failed to parse date: " + originalDate);

@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 @Data
 public class Scheduler {
@@ -14,4 +15,8 @@ public class Scheduler {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastRunTime;
     private String jobId;
+    private String healthFacilities;
+    private Location province;
+    private Location district;
+    private List<Location> healthFacilitiesList;
 }
