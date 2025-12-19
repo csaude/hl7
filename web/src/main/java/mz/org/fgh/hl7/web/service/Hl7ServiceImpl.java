@@ -4,10 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -216,11 +213,6 @@ public class Hl7ServiceImpl implements Hl7Service {
 	}
 
 	public List<PatientDemographic> search(String partialNID) {
-
-		if (!processingResult.isDone()) {
-			throw new AppException("hl7.search.error.not.done");
-		}
-
 		File selectedFile = new File(Paths.get(hl7FolderName, hl7HiddenFileName + HL7_EXTENSION).toString());
 
 		if (!selectedFile.exists()) {
@@ -244,15 +236,18 @@ public class Hl7ServiceImpl implements Hl7Service {
 				PatientDemographic data = new PatientDemographic();
 
 				data.setPid(pid.getPatientID().getIDNumber().getValue().trim());
-				data.setGivenName(pid.getPatientName(0).getGivenName().getValue());
-				data.setMiddleName(pid.getPatientName(0).getSecondAndFurtherGivenNamesOrInitialsThereof().getValue());
-				data.setFamilyName(pid.getPatientName(0).getFamilyName().getSurname().getValue());
+
+				data.setGivenName(fixEncoding(pid.getPatientName(0).getGivenName().getValue()));
+				data.setMiddleName(fixEncoding(pid.getPatientName(0).getSecondAndFurtherGivenNamesOrInitialsThereof().getValue()));
+				data.setFamilyName(fixEncoding(pid.getPatientName(0).getFamilyName().getSurname().getValue()));
+
 				setLastConsultationDate(pv1, data);
 				data.setBirthDate(pid.getDateTimeOfBirth().getTime().getValue());
 				data.setGender(pid.getAdministrativeSex().getValue());
-				data.setAddress(pid.getPatientAddress(0).getStreetAddress().getStreetName().getValue());
-				data.setCountyDistrict(pid.getPatientAddress(0).getCity().getValue());
-				data.setStateProvince(pid.getPatientAddress(0).getStateOrProvince().getValue());
+
+				data.setAddress(fixEncoding(pid.getPatientAddress(0).getStreetAddress().getStreetName().getValue()));
+				data.setCountyDistrict(fixEncoding(pid.getPatientAddress(0).getCity().getValue()));
+				data.setStateProvince(fixEncoding(pid.getPatientAddress(0).getStateOrProvince().getValue()));
 				setLocationName(adtMsg, data);
 
 				demographicData.add(data);
@@ -270,6 +265,15 @@ public class Hl7ServiceImpl implements Hl7Service {
 
 		} catch (IOException e) {
 			throw new AppException("hl7.search.error", e);
+		}
+	}
+
+	private String fixEncoding(String input) {
+		if (input == null) return null;
+		try {
+			return new String(input.getBytes("ISO-8859-1"), "UTF-8");
+		} catch (java.io.UnsupportedEncodingException e) {
+			return input;
 		}
 	}
 
@@ -365,7 +369,12 @@ public class Hl7ServiceImpl implements Hl7Service {
 			Path path = Paths.get(hl7FolderName, hl7FileName + HL7_EXTENSION);
 			BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
 			return attrs.lastModifiedTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+
+		} catch (NoSuchFileException e) {
+			log.warn("No existing HL7 file found (fresh install). Returning null for lastModifiedTime.");
+			return null;
 		} catch (IOException e) {
+			log.error("Failed to read HL7 file attributes: {}", e.getMessage(), e);
 			throw new AppException("hl7.create.error", e);
 		}
 	}

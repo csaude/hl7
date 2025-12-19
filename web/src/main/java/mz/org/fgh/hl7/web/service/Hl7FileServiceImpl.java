@@ -1,6 +1,5 @@
 package mz.org.fgh.hl7.web.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import mz.org.fgh.hl7.web.model.HL7File;
@@ -8,11 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -176,12 +173,6 @@ public class Hl7FileServiceImpl implements Hl7FileService{
         }
     }
 
-//    @Override
-//    public String getConfigJobId() {
-//        // This is a placeholder. In the original code, it was using a comment referencing "config.getJobId()"
-//        // You'd likely need to implement this with the SchedulerConfigService
-//        return schedulerConfigService.getJobId();
-//    }
 
     @Override
     public ResponseEntity<Map<String, Object>> checkJobStatus() throws Exception {
@@ -189,14 +180,22 @@ public class Hl7FileServiceImpl implements Hl7FileService{
 
         if (config.getJobId() == null) {
             log.warn("Job ID not configured in the config.json");
-            response.put("status", "Not Found!");
+            response.put("status", "NO_JOB");
+            return ResponseEntity.ok(response);
+        }
+
+        String cachedStatus = config.getLastStatus();
+
+        if ("COMPLETED".equals(cachedStatus) || "FAILED".equals(cachedStatus)) {
+            log.debug("Returning cached status: {}", cachedStatus);
+            response.put("status", cachedStatus);
+            response.put("jobId", config.getJobId());
             return ResponseEntity.ok(response);
         }
 
         String jobStatusUrl = hl7FileStatusAPI + config.getJobId();
         String resp = null;
 
-        try {
             log.debug("Calling API: {}", jobStatusUrl);
             resp = webClient.get()
                     .uri(jobStatusUrl)
@@ -223,6 +222,10 @@ public class Hl7FileServiceImpl implements Hl7FileService{
             String status = rootNode.get("status").asText();
             log.info("Job status received: {}", status);
 
+            if (!status.equals(cachedStatus)) {
+                config.setLastStatus(status);
+            }
+
             // Download file if job is completed
             if ("COMPLETED".equals(status)) {
                 String downloadURL = hl7DownloadFileAPI + config.getJobId();
@@ -238,19 +241,6 @@ public class Hl7FileServiceImpl implements Hl7FileService{
             response.put("status", status);
             response.put("jobId", config.getJobId());
             return ResponseEntity.ok(response);
-
-        } catch (WebClientResponseException e) {
-            log.error("API call failed with status {}: {}", e.getStatusCode(), e.getResponseBodyAsString(), e);
-            response.put("error", "API call failed: " + e.getStatusCode());
-        } catch (JsonProcessingException e) {
-            log.error("Error parsing JSON response: {}", resp, e);
-            response.put("error", "Invalid JSON response");
-        } catch (Exception e) {
-            log.error("Unexpected error while checking job status: {}", e.getMessage(), e);
-            response.put("error", "Unexpected error occurred");
-        }
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 
 }

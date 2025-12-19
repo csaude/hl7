@@ -1,6 +1,5 @@
 package mz.org.fgh.hl7.web.controller;
 
-import java.io.IOException;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
@@ -13,7 +12,6 @@ import mz.org.fgh.hl7.web.service.SchedulerConfigService;
 import org.apache.commons.collections4.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -22,15 +20,11 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import ca.uhn.hl7v2.HL7Exception;
 import mz.org.fgh.hl7.web.Alert;
 import mz.org.fgh.hl7.web.AppException;
 import mz.org.fgh.hl7.web.Hl7FileForm;
-import mz.org.fgh.hl7.web.model.HL7File;
-import mz.org.fgh.hl7.web.model.HL7FileRequest;
 import mz.org.fgh.hl7.web.model.Location;
 import mz.org.fgh.hl7.web.model.ProcessingResult;
 import mz.org.fgh.hl7.web.service.Hl7Service;
@@ -72,14 +66,23 @@ public class ConfigController {
                         "hl7.files.processing.error.previous");
             }
 
-            HL7File hl7File = hl7Service.getHl7File();
-
-            if (hl7File != null
-                    && nullOrEquals(hl7FileForm.getProvince(), hl7File.getProvince())
-                    && nullOrEquals(hl7FileForm.getDistrict(), hl7File.getDistrict())) {
-                hl7FileForm.setProvince(hl7File.getProvince());
-                hl7FileForm.setDistrict(hl7File.getDistrict());
-                hl7FileForm.setHealthFacilities(hl7File.getHealthFacilities());
+            if (hl7FileForm.getProvince() == null) {
+                Location savedProvince = schedulerConfigService.getProvince();
+                if (savedProvince != null) {
+                    hl7FileForm.setProvince(savedProvince);
+                }
+            }
+            if (hl7FileForm.getDistrict() == null) {
+                Location savedDistrict = schedulerConfigService.getDistrict();
+                if (savedDistrict != null) {
+                    hl7FileForm.setDistrict(savedDistrict);
+                }
+            }
+            if (hl7FileForm.getHealthFacilities() == null) {
+                List<Location> savedFacilities = schedulerConfigService.getHealthFacilitiesList();
+                if (savedFacilities != null && !savedFacilities.isEmpty()) {
+                    hl7FileForm.setHealthFacilities(savedFacilities);
+                }
             }
 
             setAllProvinces(hl7FileForm, model);
@@ -99,6 +102,7 @@ public class ConfigController {
         return "config";
     }
 
+
     @PostMapping
     public String createHL7(
             @Valid Hl7FileForm hl7FileForm,
@@ -108,26 +112,44 @@ public class ConfigController {
             HttpSession session ) throws Exception {
 
         if (result.hasErrors()) {
-            return newHL7Form(hl7FileForm, model, redirectAttrs);
+            setAllProvinces(hl7FileForm, model);
+            model.addAttribute("frequency", schedulerConfigService.getFrequency());
+            model.addAttribute("generationTime", schedulerConfigService.getGenerationTime());
+            return "config"; // Stay on the config page
         }
 
-        HL7File hl7File = hl7Service.getHl7File();
-        hl7File.setProvince(hl7FileForm.getProvince());
-        hl7File.setDistrict(hl7FileForm.getDistrict());
-        hl7File.setHealthFacilities(hl7FileForm.getHealthFacilities());
+        String jobId;
+        try {
+            jobId = schedulerConfigService.scheduledTask(hl7FileForm);
 
-        // Get JobId from the scheduledTask
-        String jobId = schedulerConfigService.scheduledTask(hl7FileForm);
+        } catch (Exception e) {
+            LOG.warn("Failed to schedule task: {}", e.getMessage());
 
-        if(!Objects.equals(jobId, "PROCESSING")){
+            model.addAttribute("alert", Alert.danger("hl7.generate.error.server.down"));
+            redirectAttrs.addFlashAttribute(Alert.danger("hl7.generate.error.server.down"));
+
+            // Re-populate the form and return to the config page
+            setAllProvinces(hl7FileForm, model);
+            model.addAttribute("frequency", hl7FileForm.getFrequency());
+            model.addAttribute("generationTime", hl7FileForm.getGenerationTime());
+            return "config"; // Stay on the config page
+        }
+
+        redirectAttrs.addFlashAttribute("jobId", jobId);
+
+        if (Objects.equals(jobId, "PROCESSING")) {
+
+            model.addAttribute("alert", Alert.warning("hl7.processing.warning"));
+            setAllProvinces(hl7FileForm, model);
+            model.addAttribute("frequency", schedulerConfigService.getFrequency());
+            model.addAttribute("generationTime", schedulerConfigService.getGenerationTime());
+            return "config"; // <-- Stays on config page
+
+        } else {
+            redirectAttrs.addFlashAttribute("jobId", jobId);
             redirectAttrs.addFlashAttribute(Alert.success("hl7.schedule.success"));
-
+            return "redirect:/search"; // <-- Redirects to search
         }
-        else {
-            redirectAttrs.addFlashAttribute(Alert.warning("hl7.processing.warning"));
-        }
-
-        return "redirect:/search";
     }
 
     private void setAllProvinces(Hl7FileForm hl7FileForm, Model model) {
