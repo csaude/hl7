@@ -236,15 +236,18 @@ public class Hl7ServiceImpl implements Hl7Service {
 				PatientDemographic data = new PatientDemographic();
 
 				data.setPid(pid.getPatientID().getIDNumber().getValue().trim());
-				data.setGivenName(pid.getPatientName(0).getGivenName().getValue());
-				data.setMiddleName(pid.getPatientName(0).getSecondAndFurtherGivenNamesOrInitialsThereof().getValue());
-				data.setFamilyName(pid.getPatientName(0).getFamilyName().getSurname().getValue());
+
+				data.setGivenName(fixEncoding(pid.getPatientName(0).getGivenName().getValue()));
+				data.setMiddleName(fixEncoding(pid.getPatientName(0).getSecondAndFurtherGivenNamesOrInitialsThereof().getValue()));
+				data.setFamilyName(fixEncoding(pid.getPatientName(0).getFamilyName().getSurname().getValue()));
+
 				setLastConsultationDate(pv1, data);
 				data.setBirthDate(pid.getDateTimeOfBirth().getTime().getValue());
 				data.setGender(pid.getAdministrativeSex().getValue());
-				data.setAddress(pid.getPatientAddress(0).getStreetAddress().getStreetName().getValue());
-				data.setCountyDistrict(pid.getPatientAddress(0).getCity().getValue());
-				data.setStateProvince(pid.getPatientAddress(0).getStateOrProvince().getValue());
+
+				data.setAddress(fixEncoding(pid.getPatientAddress(0).getStreetAddress().getStreetName().getValue()));
+				data.setCountyDistrict(fixEncoding(pid.getPatientAddress(0).getCity().getValue()));
+				data.setStateProvince(fixEncoding(pid.getPatientAddress(0).getStateOrProvince().getValue()));
 				setLocationName(adtMsg, data);
 
 				demographicData.add(data);
@@ -262,6 +265,15 @@ public class Hl7ServiceImpl implements Hl7Service {
 
 		} catch (IOException e) {
 			throw new AppException("hl7.search.error", e);
+		}
+	}
+
+	private String fixEncoding(String input) {
+		if (input == null) return null;
+		try {
+			return new String(input.getBytes("ISO-8859-1"), "UTF-8");
+		} catch (java.io.UnsupportedEncodingException e) {
+			return input;
 		}
 	}
 

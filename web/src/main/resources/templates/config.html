@@ -12,68 +12,68 @@
 
   <div class="col-lg-8">
 
-    <form action="#" th:action="@{/config}" th:object="${hl7FileForm}" method="post">
+    <form id="configForm" action="#" th:action="@{/config}" th:object="${hl7FileForm}" method="post">
       <div class="mb-3 border rounded p-3 bg-light">
         <legend class="h4"><strong>Selecção de Unidade(s) Sanitária(s) para geração do ficheiro HL7s</strong></legend>
-<!--        <p class="text-muted">Seleccione a(s) unidades sanitárias para geração do ficheiro HL7:</p>-->
+        <!--        <p class="text-muted">Seleccione a(s) unidades sanitárias para geração do ficheiro HL7:</p>-->
 
-      <div class="row">
+        <div class="row">
 
-        <!--/* Province */-->
+          <!--/* Province */-->
 
-        <div class="col-sm-12 col-md-6 mb-3">
-          <label for="province" th:text="#{hl7.province}" class="form-label"></label>
-          <select th:field="*{province}" class="form-select">
-            <option th:each="p : ${allProvinces}" th:value="${p.uuid}" th:text="${p.name}"></option>
-          </select>
-        </div>
+          <div class="col-sm-12 col-md-6 mb-3">
+            <label for="province" th:text="#{hl7.province}" class="form-label"></label>
+            <select th:field="*{province}" class="form-select">
+              <option th:each="p : ${allProvinces}" th:value="${p.uuid}" th:text="${p.name}"></option>
+            </select>
+          </div>
 
-        <!--/* District */-->
+          <!--/* District */-->
 
-        <div class="col-sm-12 col-md-6 mb-3">
-          <label for="district" th:text="#{hl7.district}" class="form-label"></label>
-          <select th:field="*{district}" class="form-select">
-            <option th:each="d : *{province.childLocations}" th:value="${d.uuid}" th:text="${d.name}"></option>
-          </select>
-        </div>
-      </div>
-
-      <!--/* Health Facilities */-->
-
-      <div class="row facilities">
-
-        <div th:each="partition : ${partitionedHF}" class="col">
-
-          <div th:each="hf : ${partition}"
-               th:class="${#fields.hasErrors('healthFacilities') ? 'form-check is-invalid': 'form-check'}">
-
-            <input type="checkbox" th:field="*{healthFacilities}" th:value="${hf.uuid}"
-                   th:class="${#fields.hasErrors('healthFacilities') ? 'form-check-input is-invalid': 'form-check-input'}"
-                   aria-describedby="healthFacilitiesInvalidFeedback" />
-            <label th:for="${#ids.prev('healthFacilities')}" th:text="${hf.name}" class="form-check-label"></label>
-
+          <div class="col-sm-12 col-md-6 mb-3">
+            <label for="district" th:text="#{hl7.district}" class="form-label"></label>
+            <select th:field="*{district}" class="form-select">
+              <option th:each="d : *{province.childLocations}" th:value="${d.uuid}" th:text="${d.name}"></option>
+            </select>
           </div>
         </div>
 
-        <div class="d-flex justify-content-end mt-2">
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault">
-            <label class="form-check-label" for="flexSwitchCheckDefault"><small>Seleccionar todas do distrito</small></label>
+        <!--/* Health Facilities */-->
+
+        <div class="row facilities">
+
+          <div th:each="partition : ${partitionedHF}" class="col">
+
+            <div th:each="hf : ${partition}"
+                 th:class="${#fields.hasErrors('healthFacilities') ? 'form-check is-invalid': 'form-check'}">
+
+              <input type="checkbox" th:field="*{healthFacilities}" th:value="${hf.uuid}"
+                     th:class="${#fields.hasErrors('healthFacilities') ? 'form-check-input is-invalid': 'form-check-input'}"
+                     aria-describedby="healthFacilitiesInvalidFeedback" />
+              <label th:for="${#ids.prev('healthFacilities')}" th:text="${hf.name}" class="form-check-label"></label>
+
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end mt-2">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault">
+              <label class="form-check-label" for="flexSwitchCheckDefault"><small>Seleccionar todas do distrito</small></label>
+            </div>
           </div>
         </div>
-      </div>
 
 
 
-      <div th:if="${#fields.hasErrors('healthFacilities')}" th:id="healthFacilitiesInvalidFeedback"
-           th:errors="*{healthFacilities}" class="invalid-feedback"></div>
+        <div th:if="${#fields.hasErrors('healthFacilities')}" th:id="healthFacilitiesInvalidFeedback"
+             th:errors="*{healthFacilities}" class="invalid-feedback"></div>
 
-      <div th:if="${#lists.isEmpty(#object.district.childLocations)}">
+        <div th:if="${#lists.isEmpty(#object.district.childLocations)}">
           <span>
             <span class="form-text" th:text="#{hl7.healthFacilities.empty}"></span>
           </span>
-        <br />
-      </div>
+          <br />
+        </div>
       </div>
 
       <br />
@@ -101,8 +101,15 @@
       </div>
 
 
-      <button th:type="submit" th:disabled="${#lists.isEmpty(#object.district.childLocations)}"
-              th:text="#{hl7.submit}" class="btn btn-primary"></button>
+      <button type="submit"
+              id="submitBtn"
+              th:disabled="${#lists.isEmpty(#object.district.childLocations)}"
+              class="btn btn-primary d-flex align-items-center justify-content-center gap-2">
+
+        <span id="submitSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+
+        <span id="submitText" th:text="#{hl7.submit}">Gerar ficheiro HL7</span>
+      </button>
 
 
     </form>
@@ -133,33 +140,60 @@
     const checkboxes = document.querySelectorAll(".row.facilities input[type=checkbox]");
     const allSwitch = document.querySelector("#flexSwitchCheckDefault");
 
-// Function to update the switch state based on checkbox states
+    // Function to update the switch state based on checkbox states
     const updateSwitchState = () => {
       const allChecked = Array.from(checkboxes).every(c => c.checked);
-      allSwitch.checked = allChecked; // Switch is checked if all checkboxes are checked
+      if(allSwitch) allSwitch.checked = allChecked;
     };
 
-// Function to toggle the state of all checkboxes
+    // Function to toggle the state of all checkboxes
     const toggleCheckboxes = () => {
       const allChecked = Array.from(checkboxes).every(c => c.checked);
-      checkboxes.forEach((c) => c.checked = !allChecked); // If all are checked, uncheck; otherwise, check all
+      checkboxes.forEach((c) => c.checked = !allChecked);
     };
 
-// Initial state check: if all checkboxes are checked, update the switch
-    updateSwitchState();
+    // Initial state check
+    if(checkboxes.length > 0) updateSwitchState();
 
     checkboxes.forEach((checkbox) =>
             checkbox.addEventListener("click", () => {
-              updateSwitchState(); // Update switch when any checkbox is clicked
+              updateSwitchState();
             })
     );
 
-    allSwitch.addEventListener('click', () => {
-      toggleCheckboxes(); // Toggle all checkboxes when the switch is clicked
-      updateSwitchState(); // Update the switch after toggling the checkboxes
-    });
+    if(allSwitch) {
+      allSwitch.addEventListener('click', () => {
+        toggleCheckboxes();
+        updateSwitchState();
+      });
+    }
 
+    // --- LOADER LOGIC ---
+    const form = document.getElementById('configForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitSpinner = document.getElementById('submitSpinner');
+    const submitText = document.getElementById('submitText');
 
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        // 1. Check validity first. If invalid, let the browser show the tooltip and DO NOTHING.
+        if (!form.checkValidity()) {
+          return;
+        }
+
+        // 2. Use setTimeout to allow the submit request to leave the browser BEFORE we disable the button.
+        setTimeout(function() {
+          submitBtn.classList.add('disabled');
+          submitBtn.setAttribute('disabled', 'disabled');
+
+          // Show the spinner
+          submitSpinner.classList.remove('d-none');
+
+          // Update text
+          submitText.textContent = "A processar...";
+        }, 10); // 10ms delay is enough
+      });
+    }
   });
 </script>
 </body>

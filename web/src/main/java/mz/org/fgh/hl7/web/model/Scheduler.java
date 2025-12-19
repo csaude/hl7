@@ -15,6 +15,7 @@ public class Scheduler {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastRunTime;
     private String jobId;
+    private String lastStatus;
     private String healthFacilities;
     private Location province;
     private Location district;

@@ -184,6 +184,15 @@ public class Hl7FileServiceImpl implements Hl7FileService{
             return ResponseEntity.ok(response);
         }
 
+        String cachedStatus = config.getLastStatus();
+
+        if ("COMPLETED".equals(cachedStatus) || "FAILED".equals(cachedStatus)) {
+            log.debug("Returning cached status: {}", cachedStatus);
+            response.put("status", cachedStatus);
+            response.put("jobId", config.getJobId());
+            return ResponseEntity.ok(response);
+        }
+
         String jobStatusUrl = hl7FileStatusAPI + config.getJobId();
         String resp = null;
 
@@ -212,6 +221,10 @@ public class Hl7FileServiceImpl implements Hl7FileService{
 
             String status = rootNode.get("status").asText();
             log.info("Job status received: {}", status);
+
+            if (!status.equals(cachedStatus)) {
+                config.setLastStatus(status);
+            }
 
             // Download file if job is completed
             if ("COMPLETED".equals(status)) {

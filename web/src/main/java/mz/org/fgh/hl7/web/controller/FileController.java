@@ -2,7 +2,7 @@ package mz.org.fgh.hl7.web.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import mz.org.fgh.hl7.web.Alert;
-import mz.org.fgh.hl7.web.model.HL7File;
+import mz.org.fgh.hl7.web.model.Location;
 import mz.org.fgh.hl7.web.service.Hl7FileService;
 import mz.org.fgh.hl7.web.service.SchedulerConfigService;
 import org.slf4j.Logger;
@@ -38,14 +38,14 @@ public class FileController {
     @GetMapping
     public String showFiles(Model model) {
         try {
-            HL7File hl7File = hl7FileService.getHl7File();
 
-            if (hl7File == null || hl7File.getDistrict() == null || hl7File.getDistrict().getUuid() == null) {
-                model.addAttribute("error", "Location information is missing.");
+            Location district = config.getDistrict();
+
+            if (district == null || district.getUuid() == null) {
                 return "file";
             }
 
-            String locationUUID = hl7File.getDistrict().getUuid();
+            String locationUUID = district.getUuid();
             log.info("Location UUID: {}", locationUUID);
 
             List<Map<String, String>> files = hl7FileService.getGeneratedFiles(locationUUID);

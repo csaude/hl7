@@ -18,6 +18,8 @@ public interface SchedulerConfigService {
     public LocalTime getGenerationTime();
     public LocalDateTime getLastRunTime();
     public String getJobId();
+    public String getLastStatus();
+    public void setLastStatus(String status);
     public String getHealthFacilities();
     public Location getProvince();
     public Location getDistrict();

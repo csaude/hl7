@@ -91,6 +91,7 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         defaultConfig.setGenerationTime(LocalTime.parse("13:00:00"));
         defaultConfig.setLastRunTime(hl7Service.getFileLastModifiedTime() != null ? hl7Service.getFileLastModifiedTime() : null);
         defaultConfig.setJobId(null);
+        defaultConfig.setLastStatus(null);
         defaultConfig.setHealthFacilities("");
         defaultConfig.setProvince(null);
         defaultConfig.setDistrict(null);
@@ -112,6 +113,12 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
         return config.getLastRunTime();
     }
     public String getJobId() { return config.getJobId(); }
+    public String getLastStatus() { return config.getLastStatus(); }
+    public void setLastStatus(String status) {
+        config.setLastStatus(status);
+        // We should save to disk so it survives restarts
+        saveConfig();
+    }
     public String getHealthFacilities(){ return  config.getHealthFacilities();};
 
     @Override
@@ -300,6 +307,7 @@ public class SchedulerConfigServiceImpl implements SchedulerConfigService {
 
             // Save config
             config.setJobId(jobId);
+            config.setLastStatus("PROCESSING");
             config.setLastRunTime(LocalDateTime.now());
             if (isManualRun) {
                 config.setProvince(hl7FileForm.getProvince());

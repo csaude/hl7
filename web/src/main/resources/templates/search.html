@@ -113,9 +113,7 @@
             <tbody>
             <tr th:each="patient : ${hl7Patients}" class="border-bottom">
               <td>
-<!--                <i th:if="${patient.gender == 'M'}" class="bi bi-person me-2 text-primary"></i>-->
                 <span th:if="${patient.gender == 'M'}" th:text="${patient.pid}"></span>
-<!--                <i th:if="${patient.gender == 'F'}" class="bi bi-person me-2 text-danger"></i>-->
                 <span th:if="${patient.gender == 'F'}" th:text="${patient.pid}"></span>
               </td>
               <td th:text="${patient.givenName}"></td>
@@ -148,6 +146,12 @@
 <script th:inline="javascript">
 
   let timeout = null;
+  let isUnloading = false; // 1. New flag to track navigation
+
+  // 2. Listen for page exit
+  window.addEventListener('beforeunload', function () {
+    isUnloading = true;
+  });
 
   document.addEventListener("DOMContentLoaded", function () {
     const jobStatusContainer = document.getElementById("job-status-container");
@@ -159,7 +163,7 @@
     }
 
     function checkJobStatus(jobId) {
-      fetch("/file/status")
+      fetch("/hl7/file/status")
               .then(response => {
                 if (!response.ok) {
                   throw new Error('Network response was not ok: ' + response.statusText);
@@ -167,13 +171,11 @@
                 return response.json();
               })
               .then(data => {
+                if (isUnloading) return;
+
                 if (data.status === "NO_JOB") {
-                  // This is a fresh install, or job was cleared. Do nothing and stop polling.
-                  jobStatusContainer.innerHTML = ''; // Clear the "Updating..." text
-                  if (timeout) {
-                    clearTimeout(timeout);
-                    timeout = null;
-                  }
+                  jobStatusContainer.innerHTML = '';
+                  if (timeout) { clearTimeout(timeout); timeout = null; }
 
                 } else if (data.status === "COMPLETED") {
                   jobStatusContainer.innerHTML = `
@@ -182,28 +184,23 @@
                         <span>Actualizado em ${formatLastRunTime([[${lastRunTime}]])}</span>
                     </small>
                   `;
-                  // Stop polling
-                  if (timeout) {
-                    clearTimeout(timeout);
-                    timeout = null;
-                  }
+                  if (timeout) { clearTimeout(timeout); timeout = null; }
+
                 } else if (data.status === "FAILED") {
-                  jobStatusContainer.innerHTML = `<span class="text-danger">❌ Job Falhou</span>`; // "Job Failed"
-                  // Stop polling
-                  if (timeout) {
-                    clearTimeout(timeout);
-                    timeout = null;
-                  }
+                  jobStatusContainer.innerHTML = `<span class="text-danger">❌ Job Falhou</span>`;
+                  if (timeout) { clearTimeout(timeout); timeout = null; }
+
                 } else {
-                  // Status is QUEUED or PROCESSING, so poll again
-                  timeout = setTimeout(() => checkJobStatus(jobId), 5000);
+                  timeout = setTimeout(() => checkJobStatus(jobId), 30000);
                 }
               })
               .catch(error => {
-                // --- THIS IS THE NEW CODE ---
+                if (isUnloading) {
+                  console.log("Navigation detected, suppressing error UI.");
+                  return;
+                }
                 console.error("Error fetching job status:", error);
 
-                // Update the UI with a user-friendly error
                 jobStatusContainer.innerHTML = `
                     <small class="opacity-75 text-nowrap text-danger">
                         <i class="bi bi-x"></i>
@@ -211,105 +208,21 @@
                     </small>
                 `;
 
-                // Stop the polling loop
-                if (timeout) {
-                  clearTimeout(timeout);
-                  timeout = null;
-                }
-                // --- END OF NEW CODE ---
+                if (timeout) { clearTimeout(timeout); timeout = null; }
               });
     }
   });
 
-  // Function to format the current date and time as dd/mm/yyyy hh:mm
   function formatLastRunTime(dateStr) {
+    if (!dateStr) return "";
     var date = new Date(dateStr);
     var day = String(date.getDate()).padStart(2, '0');
-    var month = String(date.getMonth() + 1).padStart(2, '0');  // months are 0-based
+    var month = String(date.getMonth() + 1).padStart(2, '0');
     var year = date.getFullYear();
     var hours = String(date.getHours()).padStart(2, '0');
     var minutes = String(date.getMinutes()).padStart(2, '0');
     return `${day}/${month}/${year} ${hours}:${minutes}`;
   }
-
-  function updateHealthFacilities(healthFacilities) {
-    const hf = document.querySelectorAll(".health-facilities");
-    hf.forEach(element => {
-      element.innerText = healthFacilities;
-      element.classList.remove("d-none");
-    });
-  }
-
-  async function updateHl7Status() {
-    const processingFile = document.querySelectorAll("[data-processing]");
-    if (processingFile.length) {
-      const response = await fetch("api");
-      const data = await response.json();
-
-      if (data.processingStatus === "PROCESSING") {
-        processingFile.forEach(element => {
-          element.innerHTML = `<small><i class="spinner-grow spinner-grow-sm" role="status"></i>
-    <span>${data.message}</span></small>`;
-        });
-      } else if (data.processingStatus === "DONE") {
-        processingFile.forEach(element => {
-          updateHealthFacilities(data.healthFacilities);
-          // TODO: Should probably start using a propper frontend framework
-          // to build the views.
-          if (data.logs.length) {
-            element.innerHTML = logsAccordion(data.message, data.logs);
-          } else {
-            element.classList.add("text-success");
-            element.innerHTML = `<i class='bi bi-check'></i> <span>${data.message}</span>`;
-          }
-        });
-      } else if (data.processingStatus === "FAILED") {
-        processingFile.forEach(element => {
-          updateHealthFacilities(data.healthFacilities);
-          element.classList.add("text-danger");
-          element.innerHTML = `<i class="bi bi-exclamation-triangle"></i> <span>${data.message}</span>`;
-        });
-      }
-
-      if (data.processingStatus === "DONE" || data.processingStatus === "FAILED") {
-        clearTimeout(timeout);
-      }
-
-    }
-  }
-
-  function logsAccordion(message, logs) {
-    return `
-        <div class="accordion accordion-flush" id="accordionFlushExample">
-            <div class="accordion-item">
-              <h2 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                  data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne"
-                  style="padding-left: 0;">
-                  <small class="opacity-75 text-warning">
-                    <i class='bi bi-exclamation-triangle'></i> <span>${message}</span>
-                  </small>
-                </button>
-              </h2>
-              <div id="flush-collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-                <div class="accordion-body">
-                  <ul class="list-group list-group-flush">
-                    ${logs.map(l => `<li class="list-group-item">${l}</li>`).join("")}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-  }
-
-  /*[- https://developer.mozilla.org/en-US/docs/Web/API/setInterval#ensure_that_execution_duration_is_shorter_than_interval_frequency -]*/
-  (function loop() {
-    timeout = setTimeout(() => {
-      updateHl7Status();
-      loop();
-    }, 5000);
-  })();
 
 </script>
 

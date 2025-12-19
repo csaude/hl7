@@ -1,6 +1,7 @@
 package mz.org.fgh.hl7.web.controller;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -19,10 +20,14 @@ public class AppControllerAdvice {
 
     @ModelAttribute("username")
     public String getUsername() {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return "";
+        }
+        Object principal = authentication.getPrincipal();
         if (principal instanceof UserDetails) {
             return ((UserDetails) principal).getUsername();
         }
-        return "";
+        return principal.toString();
     }
 }
